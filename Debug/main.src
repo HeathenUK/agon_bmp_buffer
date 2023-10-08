@@ -1,0 +1,6028 @@
+; Zilog eZ80 ANSI C Compiler Release 3.4
+; -nomodsect -optspeed -noreduceopt -nopadbranch -debug
+; -peephole -globalopt -localcse -const=ROM 
+	FILE	"..\main.c"
+	.assume ADL=1
+.DEBUG "C"
+	SEGMENT CODE
+.BEGREC "fmt_type",19
+.DEFINE "status"
+.VALUE 0
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "flags"
+.VALUE 1
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "size"
+.VALUE 2
+.CLASS 8
+.TYPE 2
+.ENDEF
+.DEFINE "chr"
+.VALUE 3
+.CLASS 8
+.TYPE 2
+.ENDEF
+.DEFINE "type"
+.VALUE 4
+.CLASS 8
+.TYPE 2
+.ENDEF
+.DEFINE "field_width"
+.VALUE 5
+.CLASS 8
+.TYPE 2
+.ENDEF
+.DEFINE "precision"
+.VALUE 6
+.CLASS 8
+.TYPE 2
+.ENDEF
+.DEFINE "set_begin"
+.VALUE 7
+.CLASS 8
+.TYPE 34
+.ENDEF
+.DEFINE "set_end"
+.VALUE 10
+.CLASS 8
+.TYPE 34
+.ENDEF
+.DEFINE "pad_whole"
+.VALUE 13
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "pad_pre_fract"
+.VALUE 14
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "pad_post_fract"
+.VALUE 15
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "pad_at"
+.VALUE 16
+.CLASS 8
+.TYPE 34
+.ENDEF
+.ENDREC "fmt_type"
+.BEGREC "flt_info",12
+.DEFINE "flags"
+.VALUE 0
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "exp"
+.VALUE 1
+.CLASS 8
+.TYPE 2
+.ENDEF
+.DEFINE "digits"
+.VALUE 2
+.CLASS 8
+.DIM 10
+.TYPE 108
+.ENDEF
+.ENDREC "flt_info"
+.BEGREC "NONAME0",6
+.DEFINE "quot"
+.VALUE 0
+.CLASS 8
+.TYPE 4
+.ENDEF
+.DEFINE "rem"
+.VALUE 3
+.CLASS 8
+.TYPE 4
+.ENDEF
+.ENDREC "NONAME0"
+.BEGREC "NONAME1",8
+.DEFINE "quot"
+.VALUE 0
+.CLASS 8
+.TYPE 5
+.ENDEF
+.DEFINE "rem"
+.VALUE 4
+.CLASS 8
+.TYPE 5
+.ENDEF
+.ENDREC "NONAME1"
+.BEGREC "header",6
+.DEFINE "s"
+.VALUE 0
+.CLASS 11
+.TAG "NONAME2"
+.TYPE 8
+.ENDEF
+.DEFINE "x"
+.VALUE 0
+.CLASS 11
+.TYPE 2
+.ENDEF
+.ENDREC "header"
+.BEGREC "NONAME2",6
+.DEFINE "ptr"
+.VALUE 0
+.CLASS 8
+.TAG "header"
+.TYPE 40
+.ENDEF
+.DEFINE "size"
+.VALUE 3
+.CLASS 8
+.TYPE 14
+.ENDEF
+.ENDREC "NONAME2"
+.BEGREC "NONAME3",8
+.DEFINE "baudRate"
+.VALUE 0
+.CLASS 8
+.TYPE 4
+.ENDEF
+.DEFINE "dataBits"
+.VALUE 3
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "stopBits"
+.VALUE 4
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "parity"
+.VALUE 5
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "flowcontrol"
+.VALUE 6
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "eir"
+.VALUE 7
+.CLASS 8
+.TYPE 12
+.ENDEF
+.ENDREC "NONAME3"
+.BEGREC "NONAME4",15
+.DEFINE "fs"
+.VALUE 0
+.CLASS 8
+.TYPE 46
+.ENDEF
+.DEFINE "id"
+.VALUE 3
+.CLASS 8
+.TYPE 13
+.ENDEF
+.DEFINE "attr"
+.VALUE 5
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "stat"
+.VALUE 6
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "sclust"
+.VALUE 7
+.CLASS 8
+.TYPE 15
+.ENDEF
+.DEFINE "objsize"
+.VALUE 11
+.CLASS 8
+.TYPE 15
+.ENDEF
+.ENDREC "NONAME4"
+.BEGREC "NONAME5",36
+.DEFINE "obj"
+.VALUE 0
+.CLASS 8
+.TAG "NONAME4"
+.TYPE 8
+.ENDEF
+.DEFINE "flag"
+.VALUE 15
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "err"
+.VALUE 16
+.CLASS 8
+.TYPE 12
+.ENDEF
+.DEFINE "fptr"
+.VALUE 17
+.CLASS 8
+.TYPE 15
+.ENDEF
+.DEFINE "clust"
+.VALUE 21
+.CLASS 8
+.TYPE 15
+.ENDEF
+.DEFINE "sect"
+.VALUE 25
+.CLASS 8
+.TYPE 15
+.ENDEF
+.DEFINE "dir_sect"
+.VALUE 29
+.CLASS 8
+.TYPE 15
+.ENDEF
+.DEFINE "dir_ptr"
+.VALUE 33
+.CLASS 8
+.TYPE 46
+.ENDEF
+.ENDREC "NONAME5"
+;    1	//Copyright HeathenUK 2023, others' copyrights (Envenomator, Dean Belfield, etc.) unaffected.
+;    2	
+;    3	#include <stdio.h>
+;    4	#include <stdlib.h>
+;    5	#include <ctype.h>
+;    6	#include <stdint.h>
+;    7	#include <string.h>
+;    8	#include <eZ80.h>
+;    9	#include <defines.h>
+;   10	#include "mos-interface.h"
+;   11	#include "vdp.h"
+;   12	
+;   13	typedef struct {
+;   14		
+;   15		uint16_t bmp_width;
+;   16		uint16_t bmp_height;
+;   17		uint8_t  bmp_bitdepth;
+;   18		
+;   19	} bmp_info;
+.BEGREC "NONAME6",5
+.DEFINE "bmp_width"
+.VALUE 0
+.CLASS 8
+.TYPE 13
+.ENDEF
+.DEFINE "bmp_height"
+.VALUE 2
+.CLASS 8
+.TYPE 13
+.ENDEF
+.DEFINE "bmp_bitdepth"
+.VALUE 4
+.CLASS 8
+.TYPE 12
+.ENDEF
+.ENDREC "NONAME6"
+;   20	
+;   21	extern void write16bit(uint16_t w);
+;   22	extern void write24bit(uint24_t w);
+;   23	extern void write32bit(uint32_t w);
+;   24	
+;   25	void delay_secs(UINT16 ticks_end) { //1 sec ticks
+_delay_secs:
+.DEFINE "_delay_secs"
+
+.VALUE _delay_secs
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "delay_secs",25,"_delay_secs"
+
+.LINE 25
+
+.DEFINE "ticks_end"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 13
+
+.ENDEF
+
+.DEFINE "ticks"
+
+.CLASS 65
+
+.VALUE -4
+
+.TYPE 15
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	PUSH	BC
+	DEC	SP
+;   26		
+;   27		UINT32 ticks = 0;
+.LINE 27
+
+	LD	BC,0
+	XOR	A,A
+	LD	(IX+%FFFFFFFC),BC
+	LD	(IX+%FFFFFFFF),A
+;   28		ticks_end *= 60;
+.LINE 28
+
+	LD.LIS	HL,60
+	LD	BC,(IX+%6)
+	CALL	__smulu
+	LD	(IX+%6),L
+	LD	(IX+%7),H
+;   29		while(true) {
+L_3:
+.LINE 29
+
+;   30			
+;   31			waitvblank();
+.LINE 31
+
+	CALL	_waitvblank
+;   32			ticks++;
+.LINE 32
+
+	LD	HL,(IX+%FFFFFFFC)
+	LD	E,(IX+%FFFFFFFF)
+	LD	A,%1
+	CALL	__ladd_b
+	LD	(IX+%FFFFFFFC),HL
+	LD	(IX+%FFFFFFFF),E
+;   33			if(ticks >= ticks_end) break;
+.LINE 33
+
+	LD	BC,(IX+%6)
+	CALL	__stoiu
+	LD	BC,HL
+	XOR	A,A
+	LD	HL,(IX+%FFFFFFFC)
+	LD	E,(IX+%FFFFFFFF)
+	CALL	__lcmpu
+	JR	C,L_3
+;   34			
+;   35		}
+;   36		
+;   37	}
+.LINE 37
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _delay_secs ***************************
+;Name                         Addr/Register   Size   Type
+;_waitvblank                         IMPORT  -----   function
+;ticks                                 IX-4      4   variable
+;ticks_end                             IX+6      2   parameter
+
+
+; Stack Frame Size: 13 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+.ENDFUNC "delay_secs",37,"_delay_secs"
+;   38	
+;   39	int min(int a, int b) {
+_min:
+.DEFINE "_min"
+
+.VALUE _min
+
+.CLASS 2
+
+.TYPE 68
+
+.ENDEF
+
+.BEGFUNC "min",39,"_min"
+
+.LINE 39
+
+.DEFINE "a"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "b"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 4
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+;   40	    if (a > b)
+.LINE 40
+
+	LD	BC,(IX+%6)
+	LD	HL,(IX+%9)
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L__3
+	JP	PE,L_6
+	JR	L__4
+L__3:
+	JP	PO,L_6
+L__4:
+;   41	        return b;
+.LINE 41
+
+	LD	HL,(IX+%9)
+	JR	L_7
+L_6:
+;   42	    return a;
+.LINE 42
+
+	LD	HL,(IX+%6)
+;   43	}
+L_7:
+.LINE 43
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _min ***************************
+;Name                         Addr/Register   Size   Type
+;b                                     IX+9      3   parameter
+;a                                     IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+.ENDFUNC "min",43,"_min"
+;   44	
+;   45	int max(int a, int b) {
+_max:
+.DEFINE "_max"
+
+.VALUE _max
+
+.CLASS 2
+
+.TYPE 68
+
+.ENDEF
+
+.BEGFUNC "max",45,"_max"
+
+.LINE 45
+
+.DEFINE "a"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "b"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 4
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+;   46	    if (a > b)
+.LINE 46
+
+	LD	BC,(IX+%6)
+	LD	HL,(IX+%9)
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L__7
+	JP	PE,L_9
+	JR	L__8
+L__7:
+	JP	PO,L_9
+L__8:
+;   47	        return a;
+.LINE 47
+
+	LD	HL,(IX+%6)
+	JR	L_10
+L_9:
+;   48	    return b;
+.LINE 48
+
+	LD	HL,(IX+%9)
+;   49	}
+L_10:
+.LINE 49
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _max ***************************
+;Name                         Addr/Register   Size   Type
+;b                                     IX+9      3   parameter
+;a                                     IX+6      3   parameter
+
+
+; Stack Frame Size: 12 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+.ENDFUNC "max",49,"_max"
+;   50	
+;   51	void flip(uint32_t * framebuffer, int width, int height) {
+_flip:
+.DEFINE "_flip"
+
+.VALUE _flip
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "flip",51,"_flip"
+
+.LINE 51
+
+.DEFINE "framebuffer"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 47
+
+.ENDEF
+
+.DEFINE "width"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "height"
+
+.CLASS 65
+
+.VALUE 12
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "y"
+
+.CLASS 65
+
+.VALUE -2
+
+.TYPE 13
+
+.ENDEF
+
+.DEFINE "row_buffer"
+
+.CLASS 65
+
+.VALUE -5
+
+.TYPE 47
+
+.ENDEF
+
+.DEFINE "row_size"
+
+.CLASS 65
+
+.VALUE -8
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "top_row"
+
+.CLASS 65
+
+.VALUE -11
+
+.TYPE 47
+
+.ENDEF
+
+.DEFINE "bottom_row"
+
+.CLASS 65
+
+.VALUE -14
+
+.TYPE 47
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	LEA	HL,IX+%FFFFFFF1
+	LD	SP,HL
+;   52	    uint16_t y;
+;   53	    uint32_t * row_buffer = (uint32_t * ) malloc(sizeof(uint32_t) * width);
+.LINE 53
+
+	LD	HL,(IX+%9)
+	ADD	HL,HL
+	ADD	HL,HL
+	PUSH	HL
+	LD	(IX+%FFFFFFF1),A
+	CALL	_malloc
+	LD	A,(IX+%FFFFFFF1)
+	POP	BC
+	LD	(IX+%FFFFFFFB),HL
+;   54	    int row_size = width * sizeof(uint32_t);
+.LINE 54
+
+	LD	HL,(IX+%9)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	(IX+%FFFFFFF8),HL
+;   55	
+;   56	    for (y = 0; y < height / 2; y++) {
+.LINE 56
+
+	LD	(IX+%FFFFFFFE),%0
+	LD	(IX+%FFFFFFFF),%0
+	JR	L_14
+L_12:
+;   57	        uint32_t * top_row = framebuffer + y * width;
+.LINE 57
+
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	BC,(IX+%9)
+	CALL	__imuls
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,(IX+%6)
+	ADD	HL,BC
+	LD	(IX+%FFFFFFF5),HL
+;   58	        uint32_t * bottom_row = framebuffer + (height - y - 1) * width;
+.LINE 58
+
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	BC,HL
+	LD	HL,(IX+%C)
+	OR	A,A
+	SBC	HL,BC
+	DEC	HL
+	LD	BC,(IX+%9)
+	CALL	__imuls
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,(IX+%6)
+	ADD	HL,BC
+	LD	(IX+%FFFFFFF2),HL
+;   59	
+;   60	        memcpy(row_buffer, top_row, row_size);
+.LINE 60
+
+	LD	BC,(IX+%FFFFFFF8)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFF5)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFFB)
+	PUSH	BC
+	LD	(IX+%FFFFFFF1),A
+	CALL	_memcpy
+	LD	A,(IX+%FFFFFFF1)
+	POP	BC
+	POP	BC
+	POP	BC
+;   61	        memcpy(top_row, bottom_row, row_size);
+.LINE 61
+
+	LD	BC,(IX+%FFFFFFF8)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFF2)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFF5)
+	PUSH	BC
+	LD	(IX+%FFFFFFF1),A
+	CALL	_memcpy
+	LD	A,(IX+%FFFFFFF1)
+	POP	BC
+	POP	BC
+	POP	BC
+;   62	        memcpy(bottom_row, row_buffer, row_size);
+.LINE 62
+
+	LD	BC,(IX+%FFFFFFF8)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFFB)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFF2)
+	PUSH	BC
+	LD	(IX+%FFFFFFF1),A
+	CALL	_memcpy
+	LD	A,(IX+%FFFFFFF1)
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	HL,(IX+%FFFFFFFE)
+	INC	HL
+	LD	(IX+%FFFFFFFE),L
+	LD	(IX+%FFFFFFFF),H
+;   63	    }
+L_14:
+.LINE 63
+
+	LD	BC,2
+	LD	HL,(IX+%C)
+	CALL	__idivs
+	LD	DE,HL
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	OR	A,A
+	SBC	HL,DE
+	JP	M,L__11
+	JP	PE,L_12
+	JR	L__12
+L__11:
+	JP	PO,L_12
+L__12:
+;   64	
+;   65	    free(row_buffer);
+.LINE 65
+
+	LD	BC,(IX+%FFFFFFFB)
+	PUSH	BC
+	CALL	_free
+	POP	BC
+;   66	}
+.LINE 66
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _flip ***************************
+;Name                         Addr/Register   Size   Type
+;_free                               IMPORT  -----   function
+;_memcpy                             IMPORT  -----   function
+;_malloc                             IMPORT  -----   function
+;bottom_row                           IX-14      3   variable
+;top_row                              IX-11      3   variable
+;row_size                              IX-8      3   variable
+;row_buffer                            IX-5      3   variable
+;y                                     IX-2      2   variable
+;height                               IX+12      3   parameter
+;width                                 IX+9      3   parameter
+;framebuffer                           IX+6      3   parameter
+
+
+; Stack Frame Size: 30 (bytes)
+;       Spill Code: 0 (instruction)
+
+
+.ENDFUNC "flip",66,"_flip"
+;   67	
+;   68	void twiddle_buffer(char* buffer, int width, int height) {
+_twiddle_buffer:
+.DEFINE "_twiddle_buffer"
+
+.VALUE _twiddle_buffer
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "twiddle_buffer",68,"_twiddle_buffer"
+
+.LINE 68
+
+.DEFINE "buffer"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "width"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "height"
+
+.CLASS 65
+
+.VALUE 12
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "col"
+
+.CLASS 65
+
+.VALUE -3
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "tempRow"
+
+.CLASS 65
+
+.VALUE -6
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "oppositeRowPtr"
+
+.CLASS 65
+
+.VALUE -9
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "rowPtr"
+
+.CLASS 65
+
+.VALUE -12
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "row"
+
+.CLASS 65
+
+.VALUE -15
+
+.TYPE 4
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	LEA	HL,IX+%FFFFFFE4
+	LD	SP,HL
+;   69	    int row, col;
+;   70	    char* rowPtr;
+;   71		char* oppositeRowPtr;
+;   72		char* tempRow = (char*)malloc(width * 4);
+.LINE 72
+
+	LD	HL,(IX+%9)
+	ADD	HL,HL
+	ADD	HL,HL
+	PUSH	HL
+	LD	(IX+%FFFFFFE4),A
+	CALL	_malloc
+	LD	A,(IX+%FFFFFFE4)
+	POP	BC
+	LD	(IX+%FFFFFFFA),HL
+;   73	
+;   74	    //Iterate over each row
+;   75	    for (row = 0; row < height / 2; row++) {
+.LINE 75
+
+	LD	BC,0
+	LD	(IX+%FFFFFFF1),BC
+	JR	L_24
+L_22:
+;   76	        rowPtr = buffer + row * width * 4;
+.LINE 76
+
+	LD	HL,(IX+%FFFFFFF1)
+	LD	BC,(IX+%9)
+	CALL	__imuls
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,(IX+%6)
+	ADD	HL,BC
+	LD	(IX+%FFFFFFF4),HL
+;   77	        oppositeRowPtr = buffer + (height - row - 1) * width * 4;
+.LINE 77
+
+	LD	BC,(IX+%FFFFFFF1)
+	LD	HL,(IX+%C)
+	OR	A,A
+	SBC	HL,BC
+	DEC	HL
+	LD	BC,(IX+%9)
+	CALL	__imuls
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,(IX+%6)
+	ADD	HL,BC
+	LD	(IX+%FFFFFFF7),HL
+;   78	
+;   79	        //Swap bytes within each row (BGRA to RGBA)
+;   80	        for (col = 0; col < width; col++) {
+.LINE 80
+
+	LD	BC,0
+	LD	(IX+%FFFFFFFD),BC
+	JR	L_21
+L_19:
+;   81	            tempRow[col * 4] = oppositeRowPtr[col * 4 + 2]; // R
+.LINE 81
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,HL
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	DE,(IX+%FFFFFFF7)
+	ADD	HL,DE
+	LD	IY,HL
+	LD	DE,BC
+	LD	HL,(IX+%FFFFFFFA)
+	ADD	HL,DE
+	LD	A,(IY+%2)
+	LD	(HL),A
+;   82	            tempRow[col * 4 + 1] = oppositeRowPtr[col * 4 + 1]; // G
+.LINE 82
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	DE,HL
+	LD	HL,(IX+%FFFFFFF7)
+	ADD	HL,BC
+	LD	IY,HL
+	LD	BC,DE
+	LD	HL,(IX+%FFFFFFFA)
+	ADD	HL,BC
+	INC	HL
+	LD	A,(IY+%1)
+	LD	(HL),A
+;   83	            tempRow[col * 4 + 2] = oppositeRowPtr[col * 4]; // B
+.LINE 83
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,HL
+	LD	HL,(IX+%FFFFFFF7)
+	ADD	HL,DE
+	LD	IY,HL
+	LD	DE,BC
+	LD	HL,(IX+%FFFFFFFA)
+	ADD	HL,DE
+	INC	HL
+	INC	HL
+	LD	A,(IY)
+	LD	(HL),A
+;   84	            tempRow[col * 4 + 3] = oppositeRowPtr[col * 4 + 3]; // A
+.LINE 84
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	DE,HL
+	LD	HL,(IX+%FFFFFFF7)
+	ADD	HL,BC
+	LD	IY,HL
+	LD	(IX+%FFFFFFEE),HL	; spill
+	LEA	HL,IY+%3
+	LD	(IX+%FFFFFFEB),HL	; spill
+	LD	BC,DE
+	LD	HL,(IX+%FFFFFFFA)
+	ADD	HL,BC
+	LD	IY,HL
+	LD	HL,(IX+%FFFFFFEB)	; unspill
+	LD	A,(HL)
+	LD	(IY+%3),A
+;   85	
+;   86	            oppositeRowPtr[col * 4] = rowPtr[col * 4 + 2]; // R
+.LINE 86
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,HL
+	LD	HL,(IX+%FFFFFFF4)
+	ADD	HL,DE
+	LD	IY,HL
+	LD	DE,BC
+	LD	HL,(IX+%FFFFFFF7)
+	ADD	HL,DE
+	LD	A,(IY+%2)
+	LD	(HL),A
+;   87	            oppositeRowPtr[col * 4 + 1] = rowPtr[col * 4 + 1]; // G
+.LINE 87
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	DE,HL
+	LD	HL,(IX+%FFFFFFF4)
+	ADD	HL,BC
+	LD	IY,HL
+	LD	BC,DE
+	LD	HL,(IX+%FFFFFFF7)
+	ADD	HL,BC
+	INC	HL
+	LD	A,(IY+%1)
+	LD	(HL),A
+;   88	            oppositeRowPtr[col * 4 + 2] = rowPtr[col * 4]; // B
+.LINE 88
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,HL
+	LD	HL,(IX+%FFFFFFF4)
+	ADD	HL,DE
+	LD	IY,HL
+	LD	DE,BC
+	LD	HL,(IX+%FFFFFFF7)
+	ADD	HL,DE
+	INC	HL
+	INC	HL
+	LD	A,(IY)
+	LD	(HL),A
+;   89	            oppositeRowPtr[col * 4 + 3] = rowPtr[col * 4 + 3]; // A
+.LINE 89
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	DE,HL
+	LD	HL,(IX+%FFFFFFF4)
+	ADD	HL,BC
+	LD	IY,HL
+	LD	(IX+%FFFFFFEE),HL	; spill
+	LEA	HL,IY+%3
+	LD	(IX+%FFFFFFE8),HL	; spill
+	LD	BC,DE
+	LD	HL,(IX+%FFFFFFF7)
+	ADD	HL,BC
+	LD	IY,HL
+	LD	HL,(IX+%FFFFFFE8)	; unspill
+	LD	A,(HL)
+	LD	(IY+%3),A
+;   90	
+;   91	            rowPtr[col * 4] = tempRow[col * 4]; // R
+.LINE 91
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,HL
+	LD	HL,(IX+%FFFFFFFA)
+	ADD	HL,DE
+	LD	IY,HL
+	LD	DE,BC
+	LD	HL,(IX+%FFFFFFF4)
+	ADD	HL,DE
+	LD	A,(IY)
+	LD	(HL),A
+;   92	            rowPtr[col * 4 + 1] = tempRow[col * 4 + 1]; // G
+.LINE 92
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	DE,HL
+	LD	HL,(IX+%FFFFFFFA)
+	ADD	HL,BC
+	LD	IY,HL
+	LD	BC,DE
+	LD	HL,(IX+%FFFFFFF4)
+	ADD	HL,BC
+	INC	HL
+	LD	A,(IY+%1)
+	LD	(HL),A
+;   93	            rowPtr[col * 4 + 2] = tempRow[col * 4 + 2]; // B
+.LINE 93
+
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,HL
+	LD	HL,(IX+%FFFFFFFA)
+	ADD	HL,DE
+	LD	IY,HL
+	LD	DE,BC
+	LD	HL,(IX+%FFFFFFF4)
+	ADD	HL,DE
+	INC	HL
+	INC	HL
+	LD	A,(IY+%2)
+	LD	(HL),A
+;   94	            rowPtr[col * 4 + 3] = tempRow[col * 4 + 3]; // A
+.LINE 94
+
+	LD	HL,(IX+%FFFFFFFA)
+	ADD	HL,BC
+	LD	IY,HL
+	LD	(IX+%FFFFFFEE),HL	; spill
+	LEA	HL,IY+%3
+	LD	(IX+%FFFFFFE5),HL	; spill
+	LD	HL,(IX+%FFFFFFFD)
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	BC,(IX+%FFFFFFF4)
+	ADD	HL,BC
+	LD	IY,HL
+	LD	HL,(IX+%FFFFFFE5)	; unspill
+	LD	A,(HL)
+	LD	(IY+%3),A
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+;   95	        }
+L_21:
+.LINE 95
+
+	LD	BC,(IX+%9)
+	LD	HL,(IX+%FFFFFFFD)
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L__16
+	JP	PE,L_19
+	JR	L__17
+L__16:
+	JP	PO,L_19
+L__17:
+	LD	BC,(IX+%FFFFFFF1)
+	INC	BC
+	LD	(IX+%FFFFFFF1),BC
+;   96	    }
+L_24:
+.LINE 96
+
+	LD	BC,2
+	LD	HL,(IX+%C)
+	CALL	__idivs
+	LD	BC,HL
+	LD	HL,(IX+%FFFFFFF1)
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L__18
+	JP	PE,L_22
+	JR	L__19
+L__18:
+	JP	PO,L_22
+L__19:
+;   97		free(tempRow);
+.LINE 97
+
+	LD	BC,(IX+%FFFFFFFA)
+	PUSH	BC
+	CALL	_free
+	POP	BC
+;   98	}
+.LINE 98
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _twiddle_buffer ***************************
+;Name                         Addr/Register   Size   Type
+;_free                               IMPORT  -----   function
+;_malloc                             IMPORT  -----   function
+;row                                  IX-15      3   variable
+;rowPtr                               IX-12      3   variable
+;oppositeRowPtr                        IX-9      3   variable
+;tempRow                               IX-6      3   variable
+;col                                   IX-3      3   variable
+;height                               IX+12      3   parameter
+;width                                 IX+9      3   parameter
+;buffer                                IX+6      3   parameter
+
+
+; Stack Frame Size: 43 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "twiddle_buffer",98,"_twiddle_buffer"
+;   99	
+;  100	// void bgra8888_to_rgba2222(char *input, char *output, uint16_t num_pixels) {
+;  101	    // 
+;  102		// char *input_ptr = input;
+;  103	    // char *output_ptr = output;
+;  104	
+;  105	    // while (num_pixels--) {
+;  106	
+;  107	        // *output_ptr = CONVR64[input[2] >> 6] + CONVG64[input[1] >> 6] + CONVB64[input[0] >> 6] + CONVA64[input[3] >> 6];
+;  108	
+;  109	        // input_ptr += 4;
+;  110	        // output_ptr++;
+;  111			// 
+;  112	    // }
+;  113	// }
+;  114	
+;  115	void rgba8888_to_rgba2222(char *input, char *output, size_t num_pixels) {
+_rgba8888_to_rgba2222:
+.DEFINE "_rgba8888_to_rgba2222"
+
+.VALUE _rgba8888_to_rgba2222
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "rgba8888_to_rgba2222",115,"_rgba8888_to_rgba2222"
+
+.LINE 115
+
+.DEFINE "input"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "output"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "num_pixels"
+
+.CLASS 65
+
+.VALUE 12
+
+.TYPE 14
+
+.ENDEF
+
+.DEFINE "input_ptr"
+
+.CLASS 65
+
+.VALUE -3
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "output_ptr"
+
+.CLASS 65
+
+.VALUE -6
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "r"
+
+.CLASS 65
+
+.VALUE -7
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "g"
+
+.CLASS 65
+
+.VALUE -8
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "b"
+
+.CLASS 65
+
+.VALUE -9
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "a"
+
+.CLASS 65
+
+.VALUE -10
+
+.TYPE 12
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	LEA	HL,IX+%FFFFFFE7
+	LD	SP,HL
+;  116	    char *input_ptr = input;
+.LINE 116
+
+	LD	BC,(IX+%6)
+	LD	(IX+%FFFFFFFD),BC
+;  117	    char *output_ptr = output;
+.LINE 117
+
+	LD	BC,(IX+%9)
+	LD	(IX+%FFFFFFFA),BC
+;  118	
+;  119	    while (num_pixels--) {
+.LINE 119
+
+	JR	L_33
+L_34:
+;  120	        uint8_t r = *input_ptr++;
+.LINE 120
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFF3),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFF3)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF9),A
+;  121			uint8_t g = *input_ptr++;
+.LINE 121
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFF0),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFF0)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF8),A
+;  122			uint8_t b = *input_ptr++;
+.LINE 122
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFED),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFED)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF7),A
+;  123	        uint8_t a = *input_ptr++;
+.LINE 123
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFEA),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFEA)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF6),A
+;  124	
+;  125	        *output_ptr++ = (r & 0xC0) | ((g & 0xC0) >> 2) | ((b & 0xC0) >> 4) | (a >> 6);
+.LINE 125
+
+	LD	BC,(IX+%FFFFFFFA)
+	LD	(IX+%FFFFFFE7),BC
+	LD	A,(IX+%FFFFFFF8)
+	SRL	A
+	SRL	A
+	AND	A,%30
+	LD	L,A
+	LD	A,(IX+%FFFFFFF9)
+	AND	A,%C0
+	LD	B,A
+	LD	A,L
+	OR	A,B
+	LD	B,A
+	LD	A,(IX+%FFFFFFF7)
+	SRL	A
+	SRL	A
+	SRL	A
+	SRL	A
+	AND	A,%C
+	LD	L,A
+	LD	A,B
+	OR	A,L
+	LD	B,A
+	LD	A,(IX+%FFFFFFF6)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,B
+	OR	A,L
+	LD	HL,(IX+%FFFFFFE7)
+	LD	(HL),A
+	LD	BC,(IX+%FFFFFFFA)
+	INC	BC
+	LD	(IX+%FFFFFFFA),BC
+;  126	    }
+L_33:
+.LINE 126
+
+	LD	HL,(IX+%C)
+	LD	IY,(IX+%C)
+	LEA	IY,IY+%FFFFFFFF
+	LD	(IX+%C),IY
+	LD	BC,0
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_34
+;  127	}
+.LINE 127
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _rgba8888_to_rgba2222 ***************************
+;Name                         Addr/Register   Size   Type
+;a                                    IX-10      1   variable
+;b                                     IX-9      1   variable
+;g                                     IX-8      1   variable
+;r                                     IX-7      1   variable
+;output_ptr                            IX-6      3   variable
+;input_ptr                             IX-3      3   variable
+;num_pixels                           IX+12      3   parameter
+;output                                IX+9      3   parameter
+;input                                 IX+6      3   parameter
+
+
+; Stack Frame Size: 40 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "rgba8888_to_rgba2222",127,"_rgba8888_to_rgba2222"
+;  128	
+;  129	void clear_buffer(uint16_t buffer_id) {
+_clear_buffer:
+.DEFINE "_clear_buffer"
+
+.VALUE _clear_buffer
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "clear_buffer",129,"_clear_buffer"
+
+.LINE 129
+
+.DEFINE "buffer_id"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 13
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+;  130		
+;  131		putch(23);
+.LINE 131
+
+	LD	BC,23
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  132		putch(0);
+.LINE 132
+
+	LD	BC,0
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  133		putch(0xA0);
+.LINE 133
+
+	LD	BC,160
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  134		write16bit(buffer_id);
+.LINE 134
+
+	LD	BC,(IX+%6)
+	PUSH	BC
+	CALL	_write16bit
+	POP	BC
+;  135		putch(2);	
+.LINE 135
+
+	LD	BC,2
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  136		
+;  137	}
+.LINE 137
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _clear_buffer ***************************
+;Name                         Addr/Register   Size   Type
+;_write16bit                         IMPORT  -----   function
+;_putch                              IMPORT  -----   function
+;buffer_id                             IX+6      2   parameter
+
+
+; Stack Frame Size: 9 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "clear_buffer",137,"_clear_buffer"
+;  138	
+;  139	void add_stream_to_buffer(uint16_t buffer_id, char* buffer_content, uint16_t buffer_size) {	
+_add_stream_to_buffer:
+.DEFINE "_add_stream_to_buffer"
+
+.VALUE _add_stream_to_buffer
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "add_stream_to_buffer",139,"_add_stream_to_buffer"
+
+.LINE 139
+
+.DEFINE "buffer_id"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 13
+
+.ENDEF
+
+.DEFINE "buffer_content"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "buffer_size"
+
+.CLASS 65
+
+.VALUE 12
+
+.TYPE 13
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+;  140	
+;  141		putch(23);
+.LINE 141
+
+	LD	BC,23
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  142		putch(0);
+.LINE 142
+
+	LD	BC,0
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  143		putch(0xA0);
+.LINE 143
+
+	LD	BC,160
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  144		write16bit(buffer_id);
+.LINE 144
+
+	LD	BC,(IX+%6)
+	PUSH	BC
+	CALL	_write16bit
+	POP	BC
+;  145		putch(0);
+.LINE 145
+
+	LD	BC,0
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  146		write16bit(buffer_size);
+.LINE 146
+
+	LD	BC,(IX+%C)
+	PUSH	BC
+	CALL	_write16bit
+	POP	BC
+;  147		
+;  148		mos_puts(buffer_content, buffer_size, 0);
+.LINE 148
+
+	LD	BC,0
+	PUSH	BC
+	LD	BC,(IX+%C)
+	CALL	__stoiu
+	PUSH	HL
+	LD	BC,(IX+%9)
+	PUSH	BC
+	CALL	_mos_puts
+	POP	BC
+	POP	BC
+	POP	BC
+;  149	
+;  150	}
+.LINE 150
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _add_stream_to_buffer ***************************
+;Name                         Addr/Register   Size   Type
+;_mos_puts                           IMPORT  -----   function
+;_write16bit                         IMPORT  -----   function
+;_putch                              IMPORT  -----   function
+;buffer_size                          IX+12      2   parameter
+;buffer_content                        IX+9      3   parameter
+;buffer_id                             IX+6      2   parameter
+
+
+; Stack Frame Size: 15 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "add_stream_to_buffer",150,"_add_stream_to_buffer"
+;  151	
+;  152	void vdp_extended_select(uint16_t buffer_id) {	
+_vdp_extended_select:
+.DEFINE "_vdp_extended_select"
+
+.VALUE _vdp_extended_select
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "vdp_extended_select",152,"_vdp_extended_select"
+
+.LINE 152
+
+.DEFINE "buffer_id"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 13
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+;  153	
+;  154		putch(23);
+.LINE 154
+
+	LD	BC,23
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  155		putch(27);
+.LINE 155
+
+	LD	BC,27
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  156		putch(0x20);
+.LINE 156
+
+	LD	BC,32
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  157		write16bit(buffer_id);
+.LINE 157
+
+	LD	BC,(IX+%6)
+	PUSH	BC
+	CALL	_write16bit
+	POP	BC
+;  158	
+;  159	}
+.LINE 159
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _vdp_extended_select ***************************
+;Name                         Addr/Register   Size   Type
+;_write16bit                         IMPORT  -----   function
+;_putch                              IMPORT  -----   function
+;buffer_id                             IX+6      2   parameter
+
+
+; Stack Frame Size: 9 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "vdp_extended_select",159,"_vdp_extended_select"
+;  160	
+;  161	void assign_buffer_to_bitmap(uint16_t buffer_id, uint8_t bitmap_format, uint16_t width, uint16_t height) {
+_assign_buffer_to_bitmap:
+.DEFINE "_assign_buffer_to_bitmap"
+
+.VALUE _assign_buffer_to_bitmap
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "assign_buffer_to_bitmap",161,"_assign_buffer_to_bitmap"
+
+.LINE 161
+
+.DEFINE "buffer_id"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 13
+
+.ENDEF
+
+.DEFINE "bitmap_format"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "width"
+
+.CLASS 65
+
+.VALUE 12
+
+.TYPE 13
+
+.ENDEF
+
+.DEFINE "height"
+
+.CLASS 65
+
+.VALUE 15
+
+.TYPE 13
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+;  162	
+;  163		//Consolidate buffer: (if needed) VDU 23, 0, &A0, bufferId; &0C
+;  164		
+;  165		putch(23);
+.LINE 165
+
+	LD	BC,23
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  166		putch(0);
+.LINE 166
+
+	LD	BC,0
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  167		putch(0xA0);
+.LINE 167
+
+	LD	BC,160
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  168		write16bit(buffer_id);
+.LINE 168
+
+	LD	BC,(IX+%6)
+	PUSH	BC
+	CALL	_write16bit
+	POP	BC
+;  169		putch(0x0E);
+.LINE 169
+
+	LD	BC,14
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  170		
+;  171		//Create bitmap from buffer: VDU 23, 27, &21, bufferId; format, width; height;
+;  172		
+;  173		putch(23);
+.LINE 173
+
+	LD	BC,23
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  174		putch(27);
+.LINE 174
+
+	LD	BC,27
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  175		putch(0x21);
+.LINE 175
+
+	LD	BC,33
+	PUSH	BC
+	CALL	_putch
+	POP	BC
+;  176		write16bit(buffer_id);
+.LINE 176
+
+	LD	BC,(IX+%6)
+	PUSH	BC
+	CALL	_write16bit
+	POP	BC
+;  177		putch(bitmap_format);
+.LINE 177
+
+	LD	A,(IX+%9)
+	UEXT	HL
+	LD	L,A
+	PUSH	HL
+	CALL	_putch
+	POP	BC
+;  178		write16bit(width);
+.LINE 178
+
+	LD	BC,(IX+%C)
+	PUSH	BC
+	CALL	_write16bit
+	POP	BC
+;  179		write16bit(height);
+.LINE 179
+
+	LD	BC,(IX+%F)
+	PUSH	BC
+	CALL	_write16bit
+	POP	BC
+;  180		
+;  181	}
+.LINE 181
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _assign_buffer_to_bitmap ***************************
+;Name                         Addr/Register   Size   Type
+;_write16bit                         IMPORT  -----   function
+;_putch                              IMPORT  -----   function
+;height                               IX+15      2   parameter
+;width                                IX+12      2   parameter
+;bitmap_format                         IX+9      1   parameter
+;buffer_id                             IX+6      2   parameter
+
+
+; Stack Frame Size: 18 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "assign_buffer_to_bitmap",181,"_assign_buffer_to_bitmap"
+;  182	
+;  183	void reorder(char *arr, uint16_t length) {
+_reorder:
+.DEFINE "_reorder"
+
+.VALUE _reorder
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "reorder",183,"_reorder"
+
+.LINE 183
+
+.DEFINE "arr"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "length"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 13
+
+.ENDEF
+
+.DEFINE "i"
+
+.CLASS 65
+
+.VALUE -2
+
+.TYPE 13
+
+.ENDEF
+
+.DEFINE "temp"
+
+.CLASS 65
+
+.VALUE -3
+
+.TYPE 12
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	PUSH	BC
+	PUSH	BC
+;  184	    uint16_t i;
+;  185		for (i = 0; i < length; i += 4) {
+.LINE 185
+
+	LD	(IX+%FFFFFFFE),%0
+	LD	(IX+%FFFFFFFF),%0
+	JR	L_43
+L_41:
+;  186	        if (i + 2 < length) {
+.LINE 186
+
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	DE,HL
+	INC	DE
+	INC	DE
+	LD	BC,(IX+%9)
+	CALL	__stoiu
+	LD	BC,HL
+	LD	HL,DE
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L__29
+	JP	PE,L_42
+	JR	L__30
+L__29:
+	JP	PO,L_42
+L__30:
+;  187	            uint8_t temp = arr[i];
+.LINE 187
+
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	BC,(IX+%6)
+	ADD	HL,BC
+	LD	(IX+%FFFFFFFA),HL
+	LD	A,(HL)
+	LD	(IX+%FFFFFFFD),A
+;  188	            arr[i] = arr[i + 2];
+.LINE 188
+
+	LD	IY,(IX+%FFFFFFFA)
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	BC,(IX+%6)
+	ADD	HL,BC
+	LD	A,(IY+%2)
+	LD	(HL),A
+;  189	            arr[i + 2] = temp;
+.LINE 189
+
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	BC,(IX+%6)
+	ADD	HL,BC
+	INC	HL
+	INC	HL
+	LD	A,(IX+%FFFFFFFD)
+	LD	(HL),A
+;  190	        }
+;  191	    }
+L_42:
+.LINE 191
+
+	LD	IY,(IX+%FFFFFFFE)
+	LEA	HL,IY+%4
+	LD	(IX+%FFFFFFFE),L
+	LD	(IX+%FFFFFFFF),H
+L_43:
+	LD	BC,(IX+%9)
+	LD	HL,(IX+%FFFFFFFE)
+	OR	A,A
+	SBC.SIS	HL,BC
+	JR	C,L_41
+;  192	}
+.LINE 192
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _reorder ***************************
+;Name                         Addr/Register   Size   Type
+;temp                                  IX-3      1   variable
+;i                                     IX-2      2   variable
+;length                                IX+9      2   parameter
+;arr                                   IX+6      3   parameter
+
+
+; Stack Frame Size: 18 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "reorder",192,"_reorder"
+;  193	
+;  194	void reorder_and_insert(char *arr, uint16_t length, char **new_arr, uint16_t *new_length, char insert_value) {
+_reorder_and_insert:
+.DEFINE "_reorder_and_insert"
+
+.VALUE _reorder_and_insert
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "reorder_and_insert",194,"_reorder_and_insert"
+
+.LINE 194
+
+.DEFINE "arr"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "length"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 13
+
+.ENDEF
+
+.DEFINE "new_arr"
+
+.CLASS 65
+
+.VALUE 12
+
+.TYPE 290
+
+.ENDEF
+
+.DEFINE "new_length"
+
+.CLASS 65
+
+.VALUE 15
+
+.TYPE 45
+
+.ENDEF
+
+.DEFINE "insert_value"
+
+.CLASS 65
+
+.VALUE 18
+
+.TYPE 2
+
+.ENDEF
+
+.DEFINE "i"
+
+.CLASS 65
+
+.VALUE -2
+
+.TYPE 13
+
+.ENDEF
+
+.DEFINE "j"
+
+.CLASS 65
+
+.VALUE -4
+
+.TYPE 13
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	LEA	HL,IX+%FFFFFFED
+	LD	SP,HL
+;  195	
+;  196		uint16_t i, j = 0;
+.LINE 196
+
+	LD	(IX+%FFFFFFFC),%0
+	LD	(IX+%FFFFFFFD),%0
+;  197	    *new_length = (length / 3) * 4 + (length % 3);
+.LINE 197
+
+	LD	BC,(IX+%9)
+	CALL	__stoiu
+	LD	BC,3
+	CALL	__idivs
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	DE,HL
+	LD	BC,(IX+%9)
+	CALL	__stoiu
+	LD	BC,3
+	CALL	__irems
+	ADD	HL,DE
+	LD	BC,HL
+	LD	HL,(IX+%F)
+	LD	(HL),C
+	INC	HL
+	LD	(HL),B
+;  198	    *new_arr = (char *) malloc(*new_length * sizeof(char));
+.LINE 198
+
+	LD	HL,(IX+%F)
+	LD	BC,(HL)
+	CALL	__stoiu
+	PUSH	HL
+	CALL	_malloc
+	POP	BC
+	LD	IY,(IX+%C)
+	LD	(IY),HL
+;  199	
+;  200	    for (i = 0; i < length; i += 3) {
+.LINE 200
+
+	LD	(IX+%FFFFFFFE),%0
+	LD	(IX+%FFFFFFFF),%0
+	JR	L_55
+L_53:
+;  201	        
+;  202	        (*new_arr)[j] = (i + 2 < length) ? arr[i + 2] : 0;
+.LINE 202
+
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	DE,HL
+	INC	DE
+	INC	DE
+	LD	BC,(IX+%9)
+	CALL	__stoiu
+	LD	BC,HL
+	LD	HL,DE
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L__35
+	JP	PE,L_47
+	JR	L__36
+L__35:
+	JP	PO,L_47
+L__36:
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	BC,(IX+%6)
+	ADD	HL,BC
+	INC	HL
+	INC	HL
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	(IX+%FFFFFFF9),HL
+	JR	L_48
+L_47:
+	LD	BC,0
+	LD	(IX+%FFFFFFF9),BC
+L_48:
+	LD	IY,(IX+%C)
+	LD	BC,(IX+%FFFFFFFC)
+	CALL	__stoiu
+	LD	BC,(IY)
+	ADD	HL,BC
+	LD	(IX+%FFFFFFF3),HL
+	LD	A,(IX+%FFFFFFF9)
+	LD	HL,(IX+%FFFFFFF3)
+	LD	(HL),A
+;  203	        (*new_arr)[j + 1] = (i + 1 < length) ? arr[i + 1] : 0;
+.LINE 203
+
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	DE,HL
+	INC	DE
+	LD	BC,(IX+%9)
+	CALL	__stoiu
+	LD	BC,HL
+	LD	HL,DE
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L__37
+	JP	PE,L_51
+	JR	L__38
+L__37:
+	JP	PO,L_51
+L__38:
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	BC,(IX+%6)
+	ADD	HL,BC
+	INC	HL
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	(IX+%FFFFFFF6),HL
+	JR	L_52
+L_51:
+	LD	BC,0
+	LD	(IX+%FFFFFFF6),BC
+L_52:
+	LD	A,(IX+%FFFFFFF6)
+	LD	HL,(IX+%FFFFFFF3)
+	INC	HL
+	LD	(HL),A
+;  204	        (*new_arr)[j + 2] = arr[i];
+.LINE 204
+
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__stoiu
+	LD	BC,(IX+%6)
+	ADD	HL,BC
+	LD	IY,HL
+	LD	HL,(IX+%C)
+	LD	(IX+%FFFFFFED),HL	; spill
+	LD	BC,(IX+%FFFFFFFC)
+	CALL	__stoiu
+	LD	(IX+%FFFFFFF0),HL	; spill
+	LD	HL,(IX+%FFFFFFED)	; unspill
+	LD	BC,(HL)
+	LD	HL,(IX+%FFFFFFF0)	; unspill
+	ADD	HL,BC
+	INC	HL
+	INC	HL
+	LD	A,(IY)
+	LD	(HL),A
+;  205	        
+;  206	        (*new_arr)[j + 3] = 0xFF;
+.LINE 206
+
+	LD	IY,(IX+%C)
+	LD	BC,(IX+%FFFFFFFC)
+	CALL	__stoiu
+	LD	BC,(IY)
+	ADD	HL,BC
+	LD	IY,HL
+	LEA	HL,IY+%3
+	LD	(HL),%FF
+;  207	
+;  208	        j += 4;
+.LINE 208
+
+	LD	IY,(IX+%FFFFFFFC)
+	LEA	HL,IY+%4
+	LD	(IX+%FFFFFFFC),L
+	LD	(IX+%FFFFFFFD),H
+	LD	IY,(IX+%FFFFFFFE)
+	LEA	HL,IY+%3
+	LD	(IX+%FFFFFFFE),L
+	LD	(IX+%FFFFFFFF),H
+;  209	    }
+L_55:
+.LINE 209
+
+	LD	BC,(IX+%9)
+	LD	HL,(IX+%FFFFFFFE)
+	OR	A,A
+	SBC.SIS	HL,BC
+	JR	C,L_53
+;  210		
+;  211	}
+.LINE 211
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _reorder_and_insert ***************************
+;Name                         Addr/Register   Size   Type
+;_malloc                             IMPORT  -----   function
+;G_0                                  IX-13      3   variable
+;temp49                               IX-10      3   variable
+;temp45                                IX-7      3   variable
+;j                                     IX-4      2   variable
+;i                                     IX-2      2   variable
+;insert_value                         IX+18      1   parameter
+;new_length                           IX+15      3   parameter
+;new_arr                              IX+12      3   parameter
+;length                                IX+9      2   parameter
+;arr                                   IX+6      3   parameter
+
+
+; Stack Frame Size: 40 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "reorder_and_insert",211,"_reorder_and_insert"
+;  212	
+;  213	//LUT borrowed/adapted from FabGL: http://www.fabglib.org/displaycontroller_8cpp_source.html
+;  214	// uint8_t CONVR64[4] = {0, 1, 2, 3};
+;  215	// uint8_t CONVG64[4] = {0 << 2, 1 << 2, 2 << 2, 3 << 2};
+;  216	// uint8_t CONVB64[4] = {0 << 4, 1 << 4, 2 << 4, 3 << 4};
+;  217	// uint8_t CONVA64[4] = {0 << 6, 1 << 6, 2 << 6, 3 << 6};	
+;  218	
+;  219	void bgr888_to_rgba2222(char *input, char *output, size_t num_pixels) {
+_bgr888_to_rgba2222:
+.DEFINE "_bgr888_to_rgba2222"
+
+.VALUE _bgr888_to_rgba2222
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "bgr888_to_rgba2222",219,"_bgr888_to_rgba2222"
+
+.LINE 219
+
+.DEFINE "input"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "output"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "num_pixels"
+
+.CLASS 65
+
+.VALUE 12
+
+.TYPE 14
+
+.ENDEF
+
+.DEFINE "input_ptr"
+
+.CLASS 65
+
+.VALUE -3
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "output_ptr"
+
+.CLASS 65
+
+.VALUE -6
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "b"
+
+.CLASS 65
+
+.VALUE -7
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "g"
+
+.CLASS 65
+
+.VALUE -8
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "r"
+
+.CLASS 65
+
+.VALUE -9
+
+.TYPE 12
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	LEA	HL,IX+%FFFFFFEE
+	LD	SP,HL
+;  220	    char *input_ptr = input;
+.LINE 220
+
+	LD	BC,(IX+%6)
+	LD	(IX+%FFFFFFFD),BC
+;  221	    char *output_ptr = output;
+.LINE 221
+
+	LD	BC,(IX+%9)
+	LD	(IX+%FFFFFFFA),BC
+;  222	
+;  223	    while (num_pixels--) {
+.LINE 223
+
+	JR	L_62
+L_63:
+;  224	        uint8_t b = *input_ptr++;
+.LINE 224
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFF4),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFF4)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF9),A
+;  225	        uint8_t g = *input_ptr++;
+.LINE 225
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFF1),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFF1)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF8),A
+;  226	        uint8_t r = *input_ptr++;
+.LINE 226
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFEE),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFEE)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF7),A
+;  227	        uint8_t a = 0xFF; // Alpha channel is always set to max value
+;  228	
+;  229			// *output_ptr = 0;
+;  230			// *output_ptr |= CONVR64[r >> 6];
+;  231			// *output_ptr |= CONVG64[g >> 6];
+;  232			// *output_ptr |= CONVB64[b >> 6];
+;  233			// *output_ptr |= CONVA64[a >> 6];
+;  234			// output_ptr++;
+;  235			
+;  236			*output_ptr = ((r >> 6) & 0x03) | 
+;  237	              (((g >> 6) & 0x03) << 2) | 
+;  238	              (((b >> 6) & 0x03) << 4) | 
+;  239	              (((a >> 6) & 0x03) << 6);	
+.LINE 239
+
+	LD	A,(IX+%FFFFFFF8)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,L
+	AND	A,%3
+	ADD	A,A
+	ADD	A,A
+	LD	B,A
+	LD	A,(IX+%FFFFFFF7)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,L
+	AND	A,%3
+	LD	C,A
+	LD	A,B
+	OR	A,C
+	LD	B,A
+	LD	A,(IX+%FFFFFFF9)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,L
+	AND	A,%3
+	ADD	A,A
+	ADD	A,A
+	ADD	A,A
+	ADD	A,A
+	LD	C,A
+	LD	A,B
+	OR	A,C
+	OR	A,%C0
+	LD	HL,(IX+%FFFFFFFA)
+	LD	(HL),A
+;  240			output_ptr++;
+.LINE 240
+
+	LD	BC,(IX+%FFFFFFFA)
+	INC	BC
+	LD	(IX+%FFFFFFFA),BC
+;  241			
+;  242	    }
+L_62:
+.LINE 242
+
+	LD	HL,(IX+%C)
+	LD	IY,(IX+%C)
+	LEA	IY,IY+%FFFFFFFF
+	LD	(IX+%C),IY
+	LD	BC,0
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_63
+;  243	}
+.LINE 243
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _bgr888_to_rgba2222 ***************************
+;Name                         Addr/Register   Size   Type
+;r                                     IX-9      1   variable
+;g                                     IX-8      1   variable
+;b                                     IX-7      1   variable
+;output_ptr                            IX-6      3   variable
+;input_ptr                             IX-3      3   variable
+;num_pixels                           IX+12      3   parameter
+;output                                IX+9      3   parameter
+;input                                 IX+6      3   parameter
+
+
+; Stack Frame Size: 33 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "bgr888_to_rgba2222",243,"_bgr888_to_rgba2222"
+;  244	
+;  245	void bgra8888_to_rgba2222(char *input, char *output, size_t num_pixels) {
+_bgra8888_to_rgba2222:
+.DEFINE "_bgra8888_to_rgba2222"
+
+.VALUE _bgra8888_to_rgba2222
+
+.CLASS 2
+
+.TYPE 65
+
+.ENDEF
+
+.BEGFUNC "bgra8888_to_rgba2222",245,"_bgra8888_to_rgba2222"
+
+.LINE 245
+
+.DEFINE "input"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "output"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "num_pixels"
+
+.CLASS 65
+
+.VALUE 12
+
+.TYPE 14
+
+.ENDEF
+
+.DEFINE "input_ptr"
+
+.CLASS 65
+
+.VALUE -3
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "output_ptr"
+
+.CLASS 65
+
+.VALUE -6
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "b"
+
+.CLASS 65
+
+.VALUE -7
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "g"
+
+.CLASS 65
+
+.VALUE -8
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "r"
+
+.CLASS 65
+
+.VALUE -9
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "a"
+
+.CLASS 65
+
+.VALUE -10
+
+.TYPE 12
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	LEA	HL,IX+%FFFFFFEA
+	LD	SP,HL
+;  246	    char *input_ptr = input;
+.LINE 246
+
+	LD	BC,(IX+%6)
+	LD	(IX+%FFFFFFFD),BC
+;  247	    char *output_ptr = output;
+.LINE 247
+
+	LD	BC,(IX+%9)
+	LD	(IX+%FFFFFFFA),BC
+;  248	
+;  249	    while (num_pixels--) {
+.LINE 249
+
+	JR	L_71
+L_72:
+;  250	        uint8_t b = *input_ptr++;
+.LINE 250
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFF3),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFF3)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF9),A
+;  251	        uint8_t g = *input_ptr++;
+.LINE 251
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFF0),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFF0)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF8),A
+;  252	        uint8_t r = *input_ptr++;
+.LINE 252
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFED),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFED)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF7),A
+;  253	        uint8_t a = *input_ptr++;;
+.LINE 253
+
+	LD	BC,(IX+%FFFFFFFD)
+	LD	(IX+%FFFFFFEA),BC
+	LD	BC,(IX+%FFFFFFFD)
+	INC	BC
+	LD	(IX+%FFFFFFFD),BC
+	LD	HL,(IX+%FFFFFFEA)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF6),A
+;  254	
+;  255			*output_ptr = ((r >> 6) & 0x03) | 
+;  256	              (((g >> 6) & 0x03) << 2) | 
+;  257	              (((b >> 6) & 0x03) << 4) | 
+;  258	              (((a >> 6) & 0x03) << 6);	
+.LINE 258
+
+	LD	A,(IX+%FFFFFFF8)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,L
+	AND	A,%3
+	ADD	A,A
+	ADD	A,A
+	LD	B,A
+	LD	A,(IX+%FFFFFFF7)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,L
+	AND	A,%3
+	LD	C,A
+	LD	A,B
+	OR	A,C
+	LD	B,A
+	LD	A,(IX+%FFFFFFF9)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,L
+	AND	A,%3
+	ADD	A,A
+	ADD	A,A
+	ADD	A,A
+	ADD	A,A
+	LD	C,A
+	LD	A,B
+	OR	A,C
+	LD	D,A
+	LD	A,(IX+%FFFFFFF6)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,L
+	AND	A,%3
+	LD	B,%6
+	CALL	__bshl
+	LD	B,A
+	LD	A,D
+	OR	A,B
+	LD	HL,(IX+%FFFFFFFA)
+	LD	(HL),A
+;  259			output_ptr++;
+.LINE 259
+
+	LD	BC,(IX+%FFFFFFFA)
+	INC	BC
+	LD	(IX+%FFFFFFFA),BC
+;  260			
+;  261	    }
+L_71:
+.LINE 261
+
+	LD	HL,(IX+%C)
+	LD	IY,(IX+%C)
+	LEA	IY,IY+%FFFFFFFF
+	LD	(IX+%C),IY
+	LD	BC,0
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_72
+;  262	}
+.LINE 262
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _bgra8888_to_rgba2222 ***************************
+;Name                         Addr/Register   Size   Type
+;a                                    IX-10      1   variable
+;r                                     IX-9      1   variable
+;g                                     IX-8      1   variable
+;b                                     IX-7      1   variable
+;output_ptr                            IX-6      3   variable
+;input_ptr                             IX-3      3   variable
+;num_pixels                           IX+12      3   parameter
+;output                                IX+9      3   parameter
+;input                                 IX+6      3   parameter
+
+
+; Stack Frame Size: 37 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "bgra8888_to_rgba2222",262,"_bgra8888_to_rgba2222"
+;  263	
+;  264	bmp_info load_bmp_big(const char * filename, UINT8 slot) { //Uses 64x64x4 chunks
+_load_bmp_big:
+.DEFINE "_load_bmp_big"
+
+.VALUE _load_bmp_big
+
+.CLASS 2
+
+.TAG "NONAME6"
+
+.TYPE 72
+
+.ENDEF
+
+.BEGFUNC "load_bmp_big",264,"_load_bmp_big"
+
+.LINE 264
+
+.DEFINE "filename"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 194
+
+.ENDEF
+
+.DEFINE "slot"
+
+.CLASS 65
+
+.VALUE 12
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "file"
+
+.CLASS 65
+
+.VALUE -1
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "y"
+
+.CLASS 65
+
+.VALUE -5
+
+.TYPE 5
+
+.ENDEF
+
+.DEFINE "width"
+
+.CLASS 65
+
+.VALUE -9
+
+.TYPE 5
+
+.ENDEF
+
+.DEFINE "bit_depth"
+
+.CLASS 65
+
+.VALUE -13
+
+.TYPE 5
+
+.ENDEF
+
+.DEFINE "i"
+
+.CLASS 65
+
+.VALUE -17
+
+.TYPE 5
+
+.ENDEF
+
+.DEFINE "height"
+
+.CLASS 65
+
+.VALUE -21
+
+.TYPE 5
+
+.ENDEF
+
+.DEFINE "return_info"
+
+.CLASS 65
+
+.VALUE -26
+
+.TAG "NONAME6"
+
+.TYPE 8
+
+.ENDEF
+
+.DEFINE "row_rgba2222"
+
+.CLASS 65
+
+.VALUE -29
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "src"
+
+.CLASS 65
+
+.VALUE -32
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "row_padding"
+
+.CLASS 65
+
+.VALUE -36
+
+.TYPE 5
+
+.ENDEF
+
+.DEFINE "x"
+
+.CLASS 65
+
+.VALUE -40
+
+.TYPE 5
+
+.ENDEF
+
+.DEFINE "biSize"
+
+.CLASS 65
+
+.VALUE -52
+
+.TYPE 15
+
+.ENDEF
+
+.DEFINE "fo"
+
+.CLASS 65
+
+.VALUE -55
+
+.TAG "NONAME5"
+
+.TYPE 40
+
+.ENDEF
+
+.DEFINE "r"
+
+.CLASS 65
+
+.VALUE -56
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "g"
+
+.CLASS 65
+
+.VALUE -57
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "b"
+
+.CLASS 65
+
+.VALUE -58
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "index"
+
+.CLASS 65
+
+.VALUE -59
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "color_table_size"
+
+.CLASS 65
+
+.VALUE -63
+
+.TYPE 15
+
+.ENDEF
+
+.DEFINE "non_pad_row"
+
+.CLASS 65
+
+.VALUE -66
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "image_start"
+
+.CLASS 65
+
+.VALUE -70
+
+.TYPE 5
+
+.ENDEF
+
+.DEFINE "image_buffer"
+
+.CLASS 65
+
+.VALUE -73
+
+.TYPE 34
+
+.ENDEF
+
+.DEFINE "non_pad_row"
+
+.CLASS 65
+
+.VALUE -76
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "non_pad_row"
+
+.CLASS 65
+
+.VALUE -79
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "greenMask"
+
+.CLASS 65
+
+.VALUE -83
+
+.DIM 4
+
+.TYPE 98
+
+.ENDEF
+
+.DEFINE "blueMask"
+
+.CLASS 65
+
+.VALUE -87
+
+.DIM 4
+
+.TYPE 98
+
+.ENDEF
+
+.DEFINE "alphaMask"
+
+.CLASS 65
+
+.VALUE -91
+
+.DIM 4
+
+.TYPE 98
+
+.ENDEF
+
+.DEFINE "redMask"
+
+.CLASS 65
+
+.VALUE -95
+
+.DIM 4
+
+.TYPE 98
+
+.ENDEF
+
+.DEFINE "header"
+
+.CLASS 65
+
+.VALUE -149
+
+.DIM 54
+
+.TYPE 98
+
+.ENDEF
+
+.DEFINE "color_table"
+
+.CLASS 65
+
+.VALUE -1173
+
+.DIM 1024
+
+.TYPE 98
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	LD	HL,-1192
+	ADD	HL,SP
+	LD	SP,HL
+;  265	
+;  266	    int32_t image_start, width, height, bit_depth, row_padding = 0, y, x, i;
+;  267		char *row_24bpp = NULL;
+;  268	    uint8_t pixel[4], file, r, g, b, index;
+;  269	    char header[54], color_table[1024];
+;  270	    uint32_t pixel_value, color_table_size, bytes_per_row;
+;  271		
+;  272	    uint32_t biSize;
+;  273	    FIL * fo;
+;  274		bmp_info return_info;
+;  275	
+;  276	    char * src;
+;  277	    char * image_buffer;
+;  278		char * row_rgba2222;
+;  279		
+;  280		return_info.bmp_width = 0;
+.LINE 280
+
+	LD	(IX+%FFFFFFE6),%0
+	LD	(IX+%FFFFFFE7),%0
+;  281		return_info.bmp_height = 0;
+.LINE 281
+
+	LD	(IX+%FFFFFFE8),%0
+	LD	(IX+%FFFFFFE9),%0
+;  282		return_info.bmp_bitdepth = 0;	
+.LINE 282
+
+	LD	(IX+%FFFFFFEA),%0
+;  283	
+;  284	    file = mos_fopen(filename, fa_read);
+.LINE 284
+
+	LD	BC,1
+	PUSH	BC
+	LD	BC,(IX+%9)
+	PUSH	BC
+	CALL	_mos_fopen
+	POP	BC
+	POP	BC
+	LD	(IX+%FFFFFFFF),A
+;  285	    if (!file) {
+.LINE 285
+
+	OR	A,A
+	JR	NZ,L_75
+;  286	        printf("Error: could not open %s.\r\n", filename);
+.LINE 286
+
+	LD	BC,___print_uputch
+	LD	(___print_xputch),BC
+	LD	BC,L__45
+	PUSH	BC
+	CALL	___print_sendstring
+	POP	BC
+	LD	BC,(IX+%9)
+	PUSH	BC
+	CALL	___print_sendstring
+	POP	BC
+	LD	BC,L__46
+	PUSH	BC
+	CALL	___print_sendstring
+	POP	BC
+;  287	        return return_info;
+.LINE 287
+
+	LEA	HL,IX+%6
+	LD	DE,(HL)
+	LEA	HL,IX+%FFFFFFE6
+	LD	BC,5
+	LDIR	
+	LD	HL,(IX+%6)
+	JR	L_126
+;  288	    }
+L_75:
+.LINE 288
+
+;  289	    fo = (FIL * ) mos_getfil(file);
+.LINE 289
+
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_getfil
+	POP	BC
+	LD	(IX+%FFFFFFC9),HL
+;  290	
+;  291	    mos_fread(file, header, 54);
+.LINE 291
+
+	LD	BC,54
+	PUSH	BC
+	LD	HL,IX
+	LD	BC,-149
+	ADD	HL,BC
+	LD	BC,HL
+	PUSH	BC
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fread
+	POP	BC
+	POP	BC
+	POP	BC
+;  292	
+;  293		image_start = * (uint32_t * ) & header[10];
+.LINE 293
+
+	LD	IY,IX
+	LD	BC,-149
+	ADD	IY,BC
+	LEA	HL,IY+%A
+	LD	BC,(HL)
+	INC	HL
+	INC	HL
+	INC	HL
+	LD	A,(HL)
+	LD	(IX+%FFFFFFBA),BC
+	LD	(IX+%FFFFFFBD),A
+;  294	    biSize = * (uint32_t * ) & header[14];
+.LINE 294
+
+	LD	IY,IX
+	LD	BC,-149
+	ADD	IY,BC
+	LEA	HL,IY+%E
+	LD	BC,(HL)
+	INC	HL
+	INC	HL
+	INC	HL
+	LD	A,(HL)
+	LD	(IX+%FFFFFFCC),BC
+	LD	(IX+%FFFFFFCF),A
+;  295	    width = * (INT32 * ) & header[18];
+.LINE 295
+
+	LD	IY,IX
+	LD	BC,-149
+	ADD	IY,BC
+	LEA	HL,IY+%12
+	LD	BC,(HL)
+	INC	HL
+	INC	HL
+	INC	HL
+	LD	A,(HL)
+	LD	(IX+%FFFFFFF7),BC
+	LD	(IX+%FFFFFFFA),A
+;  296	    height = * (INT32 * ) & header[22];
+.LINE 296
+
+	LEA	HL,IX+%FFFFFF81
+	LD	BC,(HL)
+	INC	HL
+	INC	HL
+	INC	HL
+	LD	A,(HL)
+	LD	(IX+%FFFFFFEB),BC
+	LD	(IX+%FFFFFFEE),A
+;  297	    bit_depth = * (uint16_t * ) & header[28];
+.LINE 297
+
+	LEA	HL,IX+%FFFFFF87
+	LD	BC,(HL)
+	CALL	__stoiu
+	LD	BC,HL
+	XOR	A,A
+	LD	(IX+%FFFFFFF3),BC
+	LD	(IX+%FFFFFFF6),A
+;  298	    color_table_size = * (uint32_t * ) & header[46];
+.LINE 298
+
+	LEA	HL,IX+%FFFFFF99
+	LD	DE,(HL)
+	INC	HL
+	INC	HL
+	INC	HL
+	LD	A,(HL)
+	LD	(IX+%FFFFFFC1),DE
+	LD	(IX+%FFFFFFC4),A
+;  299		
+;  300	    image_buffer = (char * ) malloc(width * bit_depth / 8);
+.LINE 300
+
+	LD	HL,(IX+%FFFFFFF7)
+	LD	E,(IX+%FFFFFFFA)
+	LD	A,(IX+%FFFFFFF6)
+	CALL	__lmuls
+	LD	BC,8
+	XOR	A,A
+	CALL	__ldivs
+	PUSH	HL
+	CALL	_malloc
+	POP	BC
+	LD	(IX+%FFFFFFB7),HL
+;  301		row_rgba2222 = (char * ) malloc(width);
+.LINE 301
+
+	LD	BC,(IX+%FFFFFFF7)
+	PUSH	BC
+	CALL	_malloc
+	POP	BC
+	LD	(IX+%FFFFFFE3),HL
+;  302	
+;  303	    if (color_table_size == 0 && bit_depth == 8) {
+.LINE 303
+
+	LD	HL,(IX+%FFFFFFC1)
+	LD	E,(IX+%FFFFFFC4)
+	LD	BC,0
+	XOR	A,A
+	CALL	__lcmpu
+	JR	NZ,L_79
+	LD	HL,(IX+%FFFFFFF3)
+	LD	E,(IX+%FFFFFFF6)
+	LD	BC,8
+	XOR	A,A
+	CALL	__lcmps
+	JR	NZ,L_79
+;  304	        color_table_size = 256;
+.LINE 304
+
+	LD	BC,256
+	XOR	A,A
+	LD	(IX+%FFFFFFC1),BC
+	LD	(IX+%FFFFFFC4),A
+;  305	    }
+L_79:
+.LINE 305
+
+;  306	
+;  307	    if (color_table_size > 0) mos_fread(file, color_table, color_table_size * 4);
+.LINE 307
+
+	OR	A,A
+	SBC	HL,HL
+	LD	E,%0
+	LD	BC,(IX+%FFFFFFC1)
+	LD	A,(IX+%FFFFFFC4)
+	CALL	__lcmpu
+	JR	NC,L_96
+	LD	HL,(IX+%FFFFFFC1)
+	ADD	HL,HL
+	ADD	HL,HL
+	PUSH	HL
+	LD	HL,IX
+	LD	BC,-1173
+	ADD	HL,BC
+	LD	BC,HL
+	PUSH	BC
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fread
+	POP	BC
+	POP	BC
+	POP	BC
+L_96:
+;  308	
+;  309	    // else if (biSize > 40) { //If for any reason there's yet more data in the header
+;  310	
+;  311	        // i = biSize - 40;
+;  312	        // while (i--> 0) {
+;  313	            // mos_fgetc(file);
+;  314	        // }
+;  315	
+;  316	    // }
+;  317		
+;  318		if (biSize > 40) {
+.LINE 318
+
+	LD	HL,40
+	LD	E,%0
+	LD	BC,(IX+%FFFFFFCC)
+	LD	A,(IX+%FFFFFFCF)
+	CALL	__lcmpu
+	JR	NC,L_100
+;  319			// If BITMAPV4HEADER or above, expect color masks
+;  320			if (biSize >= 108) {
+.LINE 320
+
+	LD	HL,(IX+%FFFFFFCC)
+	LD	E,(IX+%FFFFFFCF)
+	LD	BC,108
+	XOR	A,A
+	CALL	__lcmpu
+	JR	C,L_94
+;  321				char redMask[4], greenMask[4], blueMask[4], alphaMask[4];
+;  322				mos_fread(file, redMask, 4);
+.LINE 322
+
+	LD	BC,4
+	PUSH	BC
+	PEA	IX+%FFFFFFA1
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fread
+	POP	BC
+	POP	BC
+	POP	BC
+;  323				mos_fread(file, greenMask, 4);
+.LINE 323
+
+	LD	BC,4
+	PUSH	BC
+	PEA	IX+%FFFFFFAD
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fread
+	POP	BC
+	POP	BC
+	POP	BC
+;  324				mos_fread(file, blueMask, 4);
+.LINE 324
+
+	LD	BC,4
+	PUSH	BC
+	PEA	IX+%FFFFFFA9
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fread
+	POP	BC
+	POP	BC
+	POP	BC
+;  325				mos_fread(file, alphaMask, 4);
+.LINE 325
+
+	LD	BC,4
+	PUSH	BC
+	PEA	IX+%FFFFFFA5
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fread
+	POP	BC
+	POP	BC
+	POP	BC
+;  326					
+;  327				if (!(memcmp(redMask, "\x00\x00\xFF\x00", 4) == 0 &&
+.LINE 327
+
+	LD	BC,4
+	PUSH	BC
+	LD	BC,L__52
+	PUSH	BC
+	PEA	IX+%FFFFFFA1
+	CALL	_memcmp
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	BC,0
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_83
+;  328					  memcmp(greenMask, "\x00\xFF\x00\x00", 4) == 0 &&
+.LINE 328
+
+	LD	BC,4
+	PUSH	BC
+	LD	BC,L__54
+	PUSH	BC
+	PEA	IX+%FFFFFFAD
+	CALL	_memcmp
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	BC,0
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_83
+;  329					  memcmp(blueMask, "\xFF\x00\x00\x00", 4) == 0 &&
+.LINE 329
+
+	LD	BC,4
+	PUSH	BC
+	LD	BC,L__56
+	PUSH	BC
+	PEA	IX+%FFFFFFA9
+	CALL	_memcmp
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	BC,0
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_83
+;  330					  memcmp(alphaMask, "\x00\x00\x00\xFF", 4) == 0)) {
+.LINE 330
+
+	LD	BC,4
+	PUSH	BC
+	LD	BC,L__58
+	PUSH	BC
+	PEA	IX+%FFFFFFA5
+	CALL	_memcmp
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	BC,0
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_88
+L_83:
+;  331					printf("Error: Pixel format is NOT standard BGRA. Exiting.\n");
+.LINE 331
+
+	LD	BC,___print_uputch
+	LD	(___print_xputch),BC
+	LD	BC,L__60
+	PUSH	BC
+	CALL	___print_sendstring
+	POP	BC
+;  332					mos_fclose(file);
+.LINE 332
+
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fclose
+	POP	BC
+;  333					return return_info;
+.LINE 333
+
+	LEA	HL,IX+%6
+	LD	DE,(HL)
+	LEA	HL,IX+%FFFFFFE6
+	LD	BC,5
+	LDIR	
+	LD	HL,(IX+%6)
+	JR	L_126
+;  334				}
+L_88:
+.LINE 334
+
+;  335					
+;  336					// Skip remaining extra header bytes
+;  337					for (i = biSize - 108; i > 0; i--) {
+.LINE 337
+
+	LD	HL,(IX+%FFFFFFCC)
+	LD	E,(IX+%FFFFFFCF)
+	LD	BC,16777108
+	LD	A,%FF
+	CALL	__ladd
+	LD	(IX+%FFFFFFEF),HL
+	LD	(IX+%FFFFFFF2),E
+	JR	L_87
+L_85:
+;  338						mos_fgetc(file);
+.LINE 338
+
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fgetc
+	POP	BC
+	LD	HL,(IX+%FFFFFFEF)
+	LD	E,(IX+%FFFFFFF2)
+	LD	BC,16777215
+	LD	A,%FF
+	CALL	__ladd
+	LD	(IX+%FFFFFFEF),HL
+	LD	(IX+%FFFFFFF2),E
+;  339					}
+L_87:
+.LINE 339
+
+	OR	A,A
+	SBC	HL,HL
+	LD	E,%0
+	LD	BC,(IX+%FFFFFFEF)
+	LD	A,(IX+%FFFFFFF2)
+	CALL	__lcmps
+	JP	M,L_85
+	JR	L_100
+;  340			} else {
+L_94:
+.LINE 340
+
+;  341				// Skip all extra header bytes
+;  342				for (i = biSize - 40; i > 0; i--) {
+.LINE 342
+
+	LD	HL,(IX+%FFFFFFCC)
+	LD	E,(IX+%FFFFFFCF)
+	LD	BC,16777176
+	LD	A,%FF
+	CALL	__ladd
+	LD	(IX+%FFFFFFEF),HL
+	LD	(IX+%FFFFFFF2),E
+	JR	L_92
+L_90:
+;  343					mos_fgetc(file);
+.LINE 343
+
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fgetc
+	POP	BC
+	LD	HL,(IX+%FFFFFFEF)
+	LD	E,(IX+%FFFFFFF2)
+	LD	BC,16777215
+	LD	A,%FF
+	CALL	__ladd
+	LD	(IX+%FFFFFFEF),HL
+	LD	(IX+%FFFFFFF2),E
+;  344				}
+L_92:
+.LINE 344
+
+	OR	A,A
+	SBC	HL,HL
+	LD	E,%0
+	LD	BC,(IX+%FFFFFFEF)
+	LD	A,(IX+%FFFFFFF2)
+	CALL	__lcmps
+	JP	M,L__74
+	JP	PE,L_90
+	JR	L__75
+L__74:
+	JP	PO,L_90
+L__75:
+;  345			}
+;  346		}
+L_100:
+.LINE 346
+
+;  347	
+;  348	    if ((bit_depth != 32) && (bit_depth != 24) && (bit_depth != 8)) {
+.LINE 348
+
+	LD	HL,(IX+%FFFFFFF3)
+	LD	E,(IX+%FFFFFFF6)
+	LD	BC,32
+	XOR	A,A
+	CALL	__lcmps
+	JR	Z,L_101
+	LD	HL,(IX+%FFFFFFF3)
+	LD	E,(IX+%FFFFFFF6)
+	LD	BC,24
+	XOR	A,A
+	CALL	__lcmps
+	JR	Z,L_101
+	LD	HL,(IX+%FFFFFFF3)
+	LD	E,(IX+%FFFFFFF6)
+	LD	BC,8
+	XOR	A,A
+	CALL	__lcmps
+	JR	Z,L_101
+;  349	        printf("Error: unsupported bit depth (not 8, 24 or 32-bit).\n");
+.LINE 349
+
+	LD	BC,___print_uputch
+	LD	(___print_xputch),BC
+	LD	BC,L__66
+	PUSH	BC
+	CALL	___print_sendstring
+	POP	BC
+;  350	        mos_fclose(file);
+.LINE 350
+
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fclose
+	POP	BC
+;  351	        return return_info;
+.LINE 351
+
+	LEA	HL,IX+%6
+	LD	DE,(HL)
+	LEA	HL,IX+%FFFFFFE6
+	LD	BC,5
+	LDIR	
+	LD	HL,(IX+%6)
+	JR	L_126
+;  352	    }
+L_101:
+.LINE 352
+
+;  353	
+;  354	    row_padding = (4 - (width * (bit_depth / 8)) % 4) % 4;
+.LINE 354
+
+	LD	HL,(IX+%FFFFFFF3)
+	LD	E,(IX+%FFFFFFF6)
+	LD	BC,8
+	XOR	A,A
+	CALL	__ldivs
+	LD	BC,(IX+%FFFFFFF7)
+	LD	A,(IX+%FFFFFFFA)
+	CALL	__lmuls
+	LD	BC,4
+	XOR	A,A
+	CALL	__lrems
+	LD	A,E
+	LD	BC,HL
+	LD	HL,4
+	LD	E,%0
+	CALL	__lsub
+	LD	BC,4
+	XOR	A,A
+	CALL	__lrems
+	LD	(IX+%FFFFFFDC),HL
+	LD	(IX+%FFFFFFDF),E
+;  355		
+;  356		clear_buffer(slot);
+.LINE 356
+
+	LD	C,(IX+%C)
+	LD	B,%0
+	PUSH	BC
+	CALL	_clear_buffer
+	POP	BC
+;  357		
+;  358	    if (bit_depth == 8) {
+.LINE 358
+
+	LD	HL,(IX+%FFFFFFF3)
+	LD	E,(IX+%FFFFFFF6)
+	LD	BC,8
+	XOR	A,A
+	CALL	__lcmps
+	JR	NZ,L_124
+;  359			uint8_t a = 0xFF;
+;  360			int non_pad_row = width * bit_depth / 8;
+.LINE 360
+
+	LD	HL,(IX+%FFFFFFF7)
+	LD	E,(IX+%FFFFFFFA)
+	LD	BC,(IX+%FFFFFFF3)
+	LD	A,(IX+%FFFFFFF6)
+	CALL	__lmuls
+	LD	BC,8
+	XOR	A,A
+	CALL	__ldivs
+	LD	(IX+%FFFFFFBE),HL
+;  361			mos_flseek(file, image_start + ((height - 1) * (non_pad_row + row_padding)));
+.LINE 361
+
+	LD	BC,HL
+	CALL	__itol
+	LD	HL,(IX+%FFFFFFDC)
+	LD	E,(IX+%FFFFFFDF)
+	CALL	__ladd
+	LD	A,E
+	LD	IY,-1189	; spill
+	LD	BC,IX	; spill
+	ADD	IY,BC
+	LD	(IY),A
+	LD	BC,-1192	; spill
+	CALL	__istix
+	LD	HL,(IX+%FFFFFFEB)
+	LD	E,(IX+%FFFFFFEE)
+	LD	BC,1
+	XOR	A,A
+	CALL	__lsub
+	LD	A,E
+	LD	BC,HL
+	PUSH	BC
+	LD	IY,-1177	; spill
+	LD	BC,IX	; spill
+	ADD	IY,BC
+	LD	(IY),A
+	LD	IY,-1189	; unspill
+	LD	BC,IX	; unspill
+	ADD	IY,BC
+	LD	A,(IY)
+	POP	BC
+	LD	E,A
+	PUSH	BC
+	LD	IY,-1177	; unspill
+	LD	BC,IX	; unspill
+	ADD	IY,BC
+	LD	A,(IY)
+	POP	BC
+	LD	HL,BC
+	LD	BC,-1181	; spill
+	CALL	__istix
+	LD	BC,-1192	; unspill
+	CALL	__ildix
+	LD	BC,HL
+	LD	HL,BC
+	LD	BC,-1181	; unspill
+	PUSH	HL
+	CALL	__ildix
+	LD	BC,HL
+	POP	HL
+	CALL	__lmulu
+	LD	BC,(IX+%FFFFFFBA)
+	LD	A,(IX+%FFFFFFBD)
+	CALL	__ladd
+	LD	C,E
+	LD	B,%0
+	PUSH	BC
+	PUSH	HL
+	LD	C,(IX+%FFFFFFFF)
+	PUSH	BC
+	CALL	_mos_flseek
+	POP	BC
+	POP	BC
+	POP	BC
+;  362			
+;  363	        for (y = height - 1; y >= 0; y--) {
+.LINE 363
+
+	LD	HL,(IX+%FFFFFFEB)
+	LD	E,(IX+%FFFFFFEE)
+	LD	BC,16777215
+	LD	A,%FF
+	CALL	__ladd
+	LD	(IX+%FFFFFFFB),HL
+	LD	(IX+%FFFFFFFE),E
+	JR	L_110
+L_108:
+;  364	            for (x = 0; x < width; x++) {
+.LINE 364
+
+	LD	BC,0
+	XOR	A,A
+	LD	(IX+%FFFFFFD8),BC
+	LD	(IX+%FFFFFFDB),A
+	JR	L_106
+L_104:
+;  365	
+;  366	                index = (char) mos_fgetc(file);
+.LINE 366
+
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fgetc
+	POP	BC
+	LD	(IX+%FFFFFFC5),A
+;  367	                b = color_table[index * 4];
+.LINE 367
+
+	UEXT	HL
+	LD	L,A
+	ADD	HL,HL
+	ADD	HL,HL
+	LD	DE,HL
+	LD	HL,IX
+	LD	BC,-1173
+	ADD	HL,BC
+	ADD	HL,DE
+	LD	IY,-1176
+	LD	BC,IX
+	ADD	IY,BC
+	LD	(IY),HL
+	LD	HL,-1176
+	LD	BC,IX
+	ADD	HL,BC
+	LD	HL,(HL)
+	LD	A,(HL)
+	LD	(IX+%FFFFFFC6),A
+;  368	                g = color_table[index * 4 + 1];
+.LINE 368
+
+	LD	HL,-1176
+	LD	BC,IX
+	ADD	HL,BC
+	LD	HL,(HL)
+	INC	HL
+	LD	A,(HL)
+	LD	(IX+%FFFFFFC7),A
+;  369	                r = color_table[index * 4 + 2];
+.LINE 369
+
+	LD	HL,-1176
+	LD	BC,IX
+	ADD	HL,BC
+	LD	IY,(HL)
+	LEA	HL,IY+%2
+	LD	A,(HL)
+	LD	(IX+%FFFFFFC8),A
+;  370					
+;  371					row_rgba2222[x] = 	(((r >> 6) & 0x03) | 
+;  372										(((g >> 6) & 0x03) << 2) | 
+;  373										(((b >> 6) & 0x03) << 4) | 
+;  374										(((a >> 6) & 0x03) << 6));	
+.LINE 374
+
+	LD	A,(IX+%FFFFFFC7)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,L
+	AND	A,%3
+	ADD	A,A
+	ADD	A,A
+	LD	B,A
+	LD	A,(IX+%FFFFFFC8)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,L
+	AND	A,%3
+	LD	C,A
+	LD	A,B
+	OR	A,C
+	LD	B,A
+	LD	A,(IX+%FFFFFFC6)
+	UEXT	HL
+	LD	L,A
+	LD	A,%6
+	CALL	__ishrs_b
+	LD	A,L
+	AND	A,%3
+	ADD	A,A
+	ADD	A,A
+	ADD	A,A
+	ADD	A,A
+	LD	C,A
+	LD	A,B
+	OR	A,C
+	OR	A,%C0
+	LD	BC,(IX+%FFFFFFD8)
+	LD	HL,(IX+%FFFFFFE3)
+	ADD	HL,BC
+	LD	(HL),A
+	LD	HL,(IX+%FFFFFFD8)
+	LD	E,(IX+%FFFFFFDB)
+	LD	A,%1
+	CALL	__ladd_b
+	LD	(IX+%FFFFFFD8),HL
+	LD	(IX+%FFFFFFDB),E
+;  375					
+;  376	
+;  377	            }
+L_106:
+.LINE 377
+
+	LD	HL,(IX+%FFFFFFD8)
+	LD	E,(IX+%FFFFFFDB)
+	LD	BC,(IX+%FFFFFFF7)
+	LD	A,(IX+%FFFFFFFA)
+	CALL	__lcmps
+	JP	M,L__76
+	JP	PE,L_104
+	JR	L__77
+L__76:
+	JP	PO,L_104
+L__77:
+;  378				
+;  379				add_stream_to_buffer(slot,row_rgba2222,width);
+.LINE 379
+
+	LD	BC,(IX+%FFFFFFF7)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFE3)
+	PUSH	BC
+	LD	C,(IX+%C)
+	LD	B,%0
+	PUSH	BC
+	CALL	_add_stream_to_buffer
+	POP	BC
+	POP	BC
+	POP	BC
+;  380				mos_flseek(file, fo -> fptr - ((non_pad_row * 2) + row_padding));
+.LINE 380
+
+	LD	HL,(IX+%FFFFFFBE)
+	ADD	HL,HL
+	LD	BC,HL
+	CALL	__itol
+	LD	E,A
+	LD	HL,BC
+	LD	BC,(IX+%FFFFFFDC)
+	LD	A,(IX+%FFFFFFDF)
+	CALL	__ladd
+	LD	A,E
+	LD	BC,HL
+	LD	IY,(IX+%FFFFFFC9)
+	LD	HL,(IY+%11)
+	LD	E,(IY+%14)
+	CALL	__lsub
+	LD	C,E
+	LD	B,%0
+	PUSH	BC
+	PUSH	HL
+	LD	C,(IX+%FFFFFFFF)
+	PUSH	BC
+	CALL	_mos_flseek
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	HL,(IX+%FFFFFFFB)
+	LD	E,(IX+%FFFFFFFE)
+	LD	BC,16777215
+	LD	A,%FF
+	CALL	__ladd
+	LD	(IX+%FFFFFFFB),HL
+	LD	(IX+%FFFFFFFE),E
+;  381	            // for (i = 0; i < row_padding; i++) {
+;  382	                // mos_fgetc(file);
+;  383	            // }
+;  384	
+;  385	        }
+L_110:
+.LINE 385
+
+	LD	HL,(IX+%FFFFFFFB)
+	LD	E,(IX+%FFFFFFFE)
+	LD	BC,0
+	XOR	A,A
+	CALL	__lcmps
+	JP	P,L__78
+	JP	PE,L_108
+	JR	L__79
+L__78:
+	JP	PO,L_108
+L__79:
+	JR	L_125
+;  386	
+;  387	    } else if (bit_depth == 32) {
+L_124:
+.LINE 387
+
+	LD	HL,(IX+%FFFFFFF3)
+	LD	E,(IX+%FFFFFFF6)
+	LD	BC,32
+	XOR	A,A
+	CALL	__lcmps
+	JR	NZ,L_122
+;  388	        
+;  389			int non_pad_row = width * bit_depth / 8;
+.LINE 389
+
+	LD	HL,(IX+%FFFFFFF7)
+	LD	E,(IX+%FFFFFFFA)
+	LD	BC,(IX+%FFFFFFF3)
+	LD	A,(IX+%FFFFFFF6)
+	CALL	__lmuls
+	LD	BC,8
+	XOR	A,A
+	CALL	__ldivs
+	LD	(IX+%FFFFFFD4),HL
+	LD	(IX+%FFFFFFD7),E
+	LD	(IX+%FFFFFFB4),HL
+;  390	        src = (char * ) malloc(width * bit_depth / 8);
+.LINE 390
+
+	LD	BC,HL
+	PUSH	BC
+	CALL	_malloc
+	POP	BC
+	LD	(IX+%FFFFFFE0),HL
+;  391			mos_flseek(file, image_start + ((height - 1) * (non_pad_row + row_padding)));
+.LINE 391
+
+	LD	BC,(IX+%FFFFFFD4)
+	CALL	__itol
+	LD	HL,(IX+%FFFFFFDC)
+	LD	E,(IX+%FFFFFFDF)
+	CALL	__ladd
+	LD	A,E
+	LD	IY,-1185	; spill
+	LD	BC,IX	; spill
+	ADD	IY,BC
+	LD	(IY),A
+	LD	BC,-1188	; spill
+	CALL	__istix
+	LD	HL,(IX+%FFFFFFEB)
+	LD	E,(IX+%FFFFFFEE)
+	LD	BC,1
+	XOR	A,A
+	CALL	__lsub
+	LD	A,E
+	LD	BC,HL
+	PUSH	BC
+	LD	IY,-1177	; spill
+	LD	BC,IX	; spill
+	ADD	IY,BC
+	LD	(IY),A
+	LD	IY,-1185	; unspill
+	LD	BC,IX	; unspill
+	ADD	IY,BC
+	LD	A,(IY)
+	POP	BC
+	LD	E,A
+	PUSH	BC
+	LD	IY,-1177	; unspill
+	LD	BC,IX	; unspill
+	ADD	IY,BC
+	LD	A,(IY)
+	POP	BC
+	LD	HL,BC
+	LD	BC,-1181	; spill
+	CALL	__istix
+	LD	BC,-1188	; unspill
+	CALL	__ildix
+	LD	BC,HL
+	LD	HL,BC
+	LD	BC,-1181	; unspill
+	PUSH	HL
+	CALL	__ildix
+	LD	BC,HL
+	POP	HL
+	CALL	__lmulu
+	LD	BC,(IX+%FFFFFFBA)
+	LD	A,(IX+%FFFFFFBD)
+	CALL	__ladd
+	LD	C,E
+	LD	B,%0
+	PUSH	BC
+	PUSH	HL
+	LD	C,(IX+%FFFFFFFF)
+	PUSH	BC
+	CALL	_mos_flseek
+	POP	BC
+	POP	BC
+	POP	BC
+;  392	
+;  393	        for (y = height - 1; y >= 0; y--) {
+.LINE 393
+
+	LD	HL,(IX+%FFFFFFEB)
+	LD	E,(IX+%FFFFFFEE)
+	LD	BC,16777215
+	LD	A,%FF
+	CALL	__ladd
+	LD	(IX+%FFFFFFFB),HL
+	LD	(IX+%FFFFFFFE),E
+	JR	L_114
+L_112:
+;  394	
+;  395	            mos_fread(file, src, non_pad_row);
+.LINE 395
+
+	LD	BC,(IX+%FFFFFFD4)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFE0)
+	PUSH	BC
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fread
+	POP	BC
+	POP	BC
+	POP	BC
+;  396				bgra8888_to_rgba2222(src, row_rgba2222, width);
+.LINE 396
+
+	LD	BC,(IX+%FFFFFFF7)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFE3)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFE0)
+	PUSH	BC
+	CALL	_bgra8888_to_rgba2222
+	POP	BC
+	POP	BC
+	POP	BC
+;  397				add_stream_to_buffer(slot,row_rgba2222,width);
+.LINE 397
+
+	LD	BC,(IX+%FFFFFFF7)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFE3)
+	PUSH	BC
+	LD	C,(IX+%C)
+	LD	B,%0
+	PUSH	BC
+	CALL	_add_stream_to_buffer
+	POP	BC
+	POP	BC
+	POP	BC
+;  398	            mos_flseek(file, fo -> fptr - ((non_pad_row * 2) + row_padding));
+.LINE 398
+
+	LD	HL,(IX+%FFFFFFD4)
+	ADD	HL,HL
+	LD	BC,HL
+	CALL	__itol
+	LD	E,A
+	LD	HL,BC
+	LD	BC,(IX+%FFFFFFDC)
+	LD	A,(IX+%FFFFFFDF)
+	CALL	__ladd
+	LD	A,E
+	LD	BC,HL
+	LD	IY,(IX+%FFFFFFC9)
+	LD	HL,(IY+%11)
+	LD	E,(IY+%14)
+	CALL	__lsub
+	LD	C,E
+	LD	B,%0
+	PUSH	BC
+	PUSH	HL
+	LD	C,(IX+%FFFFFFFF)
+	PUSH	BC
+	CALL	_mos_flseek
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	HL,(IX+%FFFFFFFB)
+	LD	E,(IX+%FFFFFFFE)
+	LD	BC,16777215
+	LD	A,%FF
+	CALL	__ladd
+	LD	(IX+%FFFFFFFB),HL
+	LD	(IX+%FFFFFFFE),E
+;  399	
+;  400	        }
+L_114:
+.LINE 400
+
+	LD	HL,(IX+%FFFFFFFB)
+	LD	E,(IX+%FFFFFFFE)
+	LD	BC,0
+	XOR	A,A
+	CALL	__lcmps
+	JP	P,L__80
+	JP	PE,L_112
+	JR	L__81
+L__80:
+	JP	PO,L_112
+L__81:
+	JR	L_125
+;  401	
+;  402	    } else if (bit_depth == 24) {
+L_122:
+.LINE 402
+
+	LD	HL,(IX+%FFFFFFF3)
+	LD	E,(IX+%FFFFFFF6)
+	LD	BC,24
+	XOR	A,A
+	CALL	__lcmps
+	JR	NZ,L_125
+;  403			
+;  404			uint16_t new_row_size;
+;  405			int non_pad_row = width * bit_depth / 8;
+.LINE 405
+
+	LD	HL,(IX+%FFFFFFF7)
+	LD	E,(IX+%FFFFFFFA)
+	LD	BC,(IX+%FFFFFFF3)
+	LD	A,(IX+%FFFFFFF6)
+	CALL	__lmuls
+	LD	BC,8
+	XOR	A,A
+	CALL	__ldivs
+	LD	(IX+%FFFFFFD0),HL
+	LD	(IX+%FFFFFFD3),E
+	LD	(IX+%FFFFFFB1),HL
+;  406			
+;  407	        src = (char * ) malloc(width * bit_depth / 8);
+.LINE 407
+
+	LD	BC,HL
+	PUSH	BC
+	CALL	_malloc
+	POP	BC
+	LD	(IX+%FFFFFFE0),HL
+;  408			mos_flseek(file, image_start + ((height - 1) * (non_pad_row + row_padding)));
+.LINE 408
+
+	LD	BC,(IX+%FFFFFFD0)
+	CALL	__itol
+	LD	HL,(IX+%FFFFFFDC)
+	LD	E,(IX+%FFFFFFDF)
+	CALL	__ladd
+	LD	A,E
+	LD	IY,-1178	; spill
+	LD	BC,IX	; spill
+	ADD	IY,BC
+	LD	(IY),A
+	LD	BC,-1184	; spill
+	CALL	__istix
+	LD	HL,(IX+%FFFFFFEB)
+	LD	E,(IX+%FFFFFFEE)
+	LD	BC,1
+	XOR	A,A
+	CALL	__lsub
+	LD	A,E
+	LD	BC,HL
+	PUSH	BC
+	LD	IY,-1177	; spill
+	LD	BC,IX	; spill
+	ADD	IY,BC
+	LD	(IY),A
+	LD	IY,-1178	; unspill
+	LD	BC,IX	; unspill
+	ADD	IY,BC
+	LD	A,(IY)
+	POP	BC
+	LD	E,A
+	PUSH	BC
+	LD	IY,-1177	; unspill
+	LD	BC,IX	; unspill
+	ADD	IY,BC
+	LD	A,(IY)
+	POP	BC
+	LD	HL,BC
+	LD	BC,-1181	; spill
+	CALL	__istix
+	LD	BC,-1184	; unspill
+	CALL	__ildix
+	LD	BC,HL
+	LD	HL,BC
+	LD	BC,-1181	; unspill
+	PUSH	HL
+	CALL	__ildix
+	LD	BC,HL
+	POP	HL
+	CALL	__lmulu
+	LD	BC,(IX+%FFFFFFBA)
+	LD	A,(IX+%FFFFFFBD)
+	CALL	__ladd
+	LD	C,E
+	LD	B,%0
+	PUSH	BC
+	PUSH	HL
+	LD	C,(IX+%FFFFFFFF)
+	PUSH	BC
+	CALL	_mos_flseek
+	POP	BC
+	POP	BC
+	POP	BC
+;  409			
+;  410	        for (y = height - 1; y >= 0; y--) {
+.LINE 410
+
+	LD	HL,(IX+%FFFFFFEB)
+	LD	E,(IX+%FFFFFFEE)
+	LD	BC,16777215
+	LD	A,%FF
+	CALL	__ladd
+	LD	(IX+%FFFFFFFB),HL
+	LD	(IX+%FFFFFFFE),E
+	JR	L_118
+L_116:
+;  411	
+;  412	            mos_fread(file, src, non_pad_row);
+.LINE 412
+
+	LD	BC,(IX+%FFFFFFD0)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFE0)
+	PUSH	BC
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fread
+	POP	BC
+	POP	BC
+	POP	BC
+;  413				bgr888_to_rgba2222(src, row_rgba2222, width);
+.LINE 413
+
+	LD	BC,(IX+%FFFFFFF7)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFE3)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFE0)
+	PUSH	BC
+	CALL	_bgr888_to_rgba2222
+	POP	BC
+	POP	BC
+	POP	BC
+;  414				add_stream_to_buffer(slot,row_rgba2222,width);
+.LINE 414
+
+	LD	BC,(IX+%FFFFFFF7)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFE3)
+	PUSH	BC
+	LD	C,(IX+%C)
+	LD	B,%0
+	PUSH	BC
+	CALL	_add_stream_to_buffer
+	POP	BC
+	POP	BC
+	POP	BC
+;  415	            mos_flseek(file, fo -> fptr - ((non_pad_row * 2) + row_padding));
+.LINE 415
+
+	LD	HL,(IX+%FFFFFFD0)
+	ADD	HL,HL
+	LD	BC,HL
+	CALL	__itol
+	LD	E,A
+	LD	HL,BC
+	LD	BC,(IX+%FFFFFFDC)
+	LD	A,(IX+%FFFFFFDF)
+	CALL	__ladd
+	LD	A,E
+	LD	BC,HL
+	LD	IY,(IX+%FFFFFFC9)
+	LD	HL,(IY+%11)
+	LD	E,(IY+%14)
+	CALL	__lsub
+	LD	C,E
+	LD	B,%0
+	PUSH	BC
+	PUSH	HL
+	LD	C,(IX+%FFFFFFFF)
+	PUSH	BC
+	CALL	_mos_flseek
+	POP	BC
+	POP	BC
+	POP	BC
+	LD	HL,(IX+%FFFFFFFB)
+	LD	E,(IX+%FFFFFFFE)
+	LD	BC,16777215
+	LD	A,%FF
+	CALL	__ladd
+	LD	(IX+%FFFFFFFB),HL
+	LD	(IX+%FFFFFFFE),E
+;  416	
+;  417	        }		
+L_118:
+.LINE 417
+
+	LD	HL,(IX+%FFFFFFFB)
+	LD	E,(IX+%FFFFFFFE)
+	LD	BC,0
+	XOR	A,A
+	CALL	__lcmps
+	JP	P,L__82
+	JP	PE,L_116
+	JR	L__83
+L__82:
+	JP	PO,L_116
+L__83:
+;  418			free(row_24bpp);
+.LINE 418
+
+	LD	BC,0
+	PUSH	BC
+	CALL	_free
+	POP	BC
+;  419			free(src);
+.LINE 419
+
+	LD	BC,(IX+%FFFFFFE0)
+	PUSH	BC
+	CALL	_free
+	POP	BC
+;  420			
+;  421			
+;  422		}
+L_125:
+.LINE 422
+
+;  423	
+;  424		assign_buffer_to_bitmap(slot,1,width,height);
+.LINE 424
+
+	LD	BC,(IX+%FFFFFFEB)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFF7)
+	PUSH	BC
+	LD	BC,1
+	PUSH	BC
+	LD	C,(IX+%C)
+	LD	B,%0
+	PUSH	BC
+	CALL	_assign_buffer_to_bitmap
+	POP	BC
+	POP	BC
+	POP	BC
+	POP	BC
+;  425		
+;  426	    mos_fclose(file);
+.LINE 426
+
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_mos_fclose
+	POP	BC
+;  427	    free(image_buffer);
+.LINE 427
+
+	LD	BC,(IX+%FFFFFFB7)
+	PUSH	BC
+	CALL	_free
+	POP	BC
+;  428		free(row_rgba2222);
+.LINE 428
+
+	LD	BC,(IX+%FFFFFFE3)
+	PUSH	BC
+	CALL	_free
+	POP	BC
+;  429		
+;  430	    //return width * height;
+;  431		return_info.bmp_width = width;
+.LINE 431
+
+	LD	HL,(IX+%FFFFFFF7)
+	LD	(IX+%FFFFFFE6),L
+	LD	(IX+%FFFFFFE7),H
+;  432		return_info.bmp_height = height;
+.LINE 432
+
+	LD	HL,(IX+%FFFFFFEB)
+	LD	(IX+%FFFFFFE8),L
+	LD	(IX+%FFFFFFE9),H
+;  433		return_info.bmp_bitdepth = bit_depth;
+.LINE 433
+
+	LD	A,(IX+%FFFFFFF3)
+	LD	(IX+%FFFFFFEA),A
+;  434		return return_info;
+.LINE 434
+
+	LEA	HL,IX+%6
+	LD	DE,(HL)
+	LEA	HL,IX+%FFFFFFE6
+	LD	BC,5
+	LDIR	
+	LD	HL,(IX+%6)
+;  435	
+;  436	}
+L_126:
+.LINE 436
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _load_bmp_big ***************************
+;Name                         Addr/Register   Size   Type
+;_free                               IMPORT  -----   function
+;_mos_flseek                         IMPORT  -----   function
+;_mos_fgetc                          IMPORT  -----   function
+;_mos_fclose                         IMPORT  -----   function
+;_memcmp                             IMPORT  -----   function
+;_malloc                             IMPORT  -----   function
+;_mos_fread                          IMPORT  -----   function
+;_mos_getfil                         IMPORT  -----   function
+;___print_sendstring                 IMPORT  -----   function
+;___print_xputch                     IMPORT      3   variable
+;___print_uputch                     IMPORT  -----   function
+;_mos_fopen                          IMPORT  -----   function
+;color_table                        IX-1173   1024   variable
+;header                              IX-149     54   variable
+;redMask                              IX-95      4   variable
+;alphaMask                            IX-91      4   variable
+;blueMask                             IX-87      4   variable
+;greenMask                            IX-83      4   variable
+;non_pad_row                          IX-79      3   variable
+;non_pad_row                          IX-76      3   variable
+;image_buffer                         IX-73      3   variable
+;image_start                          IX-70      4   variable
+;non_pad_row                          IX-66      3   variable
+;color_table_size                     IX-63      4   variable
+;index                                IX-59      1   variable
+;b                                    IX-58      1   variable
+;g                                    IX-57      1   variable
+;r                                    IX-56      1   variable
+;fo                                   IX-55      3   variable
+;biSize                               IX-52      4   variable
+;O_17                                 IX-48      4   variable
+;O_15                                 IX-44      4   variable
+;x                                    IX-40      4   variable
+;row_padding                          IX-36      4   variable
+;src                                  IX-32      3   variable
+;row_rgba2222                         IX-29      3   variable
+;return_info                          IX-26      5   variable
+;height                               IX-21      4   variable
+;i                                    IX-17      4   variable
+;bit_depth                            IX-13      4   variable
+;width                                 IX-9      4   variable
+;y                                     IX-5      4   variable
+;file                                  IX-1      1   variable
+;slot                                 IX+12      1   parameter
+;filename                              IX+9      3   parameter
+
+
+; Stack Frame Size: 1207 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "load_bmp_big",436,"_load_bmp_big"
+	SEGMENT STRSECT
+L__45:
+	DB	"Error: could not open "
+	DB	0
+L__46:
+	DB	"."
+	DB	13,10,0
+L__52:
+	DB	0,0,-1,0,0
+L__54:
+	DB	0,-1,0,0,0
+L__56:
+	DB	-1,0,0,0,0
+L__58:
+	DB	0,0,0,-1,0
+L__60:
+	DB	"Error: Pixel format is NOT standard BGRA. Exiting."
+	DB	10,0
+L__66:
+	DB	"Error: unsupported bit depth (not 8, 24 or 32-bit)."
+	DB	10,0
+	SEGMENT CODE
+;  437	
+;  438	uint16_t strtou16(const char *str) {
+_strtou16:
+.DEFINE "_strtou16"
+
+.VALUE _strtou16
+
+.CLASS 2
+
+.TYPE 77
+
+.ENDEF
+
+.BEGFUNC "strtou16",438,"_strtou16"
+
+.LINE 438
+
+.DEFINE "str"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 194
+
+.ENDEF
+
+.DEFINE "result"
+
+.CLASS 65
+
+.VALUE -2
+
+.TYPE 13
+
+.ENDEF
+
+.DEFINE "digit"
+
+.CLASS 65
+
+.VALUE -4
+
+.TYPE 13
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	PUSH	BC
+	DEC	SP
+;  439	    uint16_t result = 0;
+.LINE 439
+
+	LD	(IX+%FFFFFFFE),%0
+	LD	(IX+%FFFFFFFF),%0
+;  440	    const uint16_t maxDiv10 = 6553;  // 65535 / 10
+;  441	    const uint16_t maxMod10 = 5;     // 65535 % 10
+;  442	
+;  443	    while (*str == ' ' || *str == '\t' || *str == '\n') {
+.LINE 443
+
+	JR	L_130
+L_131:
+;  444	        str++;
+.LINE 444
+
+	LD	BC,(IX+%6)
+	INC	BC
+	LD	(IX+%6),BC
+;  445	    }
+L_130:
+.LINE 445
+
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,32
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_131
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,9
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_131
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,10
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_131
+;  446	
+;  447	    while (*str >= '0' && *str <= '9') {
+.LINE 447
+
+	JR	L_138
+L_139:
+;  448	        uint16_t digit = *str - '0';
+.LINE 448
+
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	IY,HL
+	LEA	HL,IY+%FFFFFFD0
+	LD	(IX+%FFFFFFFC),L
+	LD	(IX+%FFFFFFFD),H
+;  449	        if (result > maxDiv10 || (result == maxDiv10 && digit > maxMod10)) {
+.LINE 449
+
+	LD	BC,(IX+%FFFFFFFE)
+	LD.LIS	HL,6553
+	OR	A,A
+	SBC.SIS	HL,BC
+	JR	C,L_135
+	LD.LIS	BC,6553
+	LD	HL,(IX+%FFFFFFFE)
+	OR	A,A
+	SBC.SIS	HL,BC
+	JR	NZ,L_136
+	LD	BC,(IX+%FFFFFFFC)
+	LD.LIS	HL,5
+	OR	A,A
+	SBC.SIS	HL,BC
+	JR	NC,L_136
+L_135:
+;  450	            return 65535;
+.LINE 450
+
+	LD.LIS	HL,65535
+	JR	L_142
+;  451	        }
+L_136:
+.LINE 451
+
+;  452	        result = result * 10 + digit;
+.LINE 452
+
+	LD.LIS	HL,10
+	LD	BC,(IX+%FFFFFFFE)
+	CALL	__smulu
+	LD	BC,(IX+%FFFFFFFC)
+	ADD.SIS	HL,BC
+	LD	(IX+%FFFFFFFE),L
+	LD	(IX+%FFFFFFFF),H
+;  453	        str++;
+.LINE 453
+
+	LD	BC,(IX+%6)
+	INC	BC
+	LD	(IX+%6),BC
+;  454	    }
+L_138:
+.LINE 454
+
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,48
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L__93
+	JP	PE,L_141
+	JR	L__94
+L__93:
+	JP	PO,L_141
+L__94:
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,HL
+	LD	HL,57
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L__95
+	JP	PE,L_139
+	JR	L__96
+L__95:
+	JP	PO,L_139
+L__96:
+L_141:
+;  455	
+;  456	    return result;
+.LINE 456
+
+	LD	HL,(IX+%FFFFFFFE)
+;  457	}
+L_142:
+.LINE 457
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _strtou16 ***************************
+;Name                         Addr/Register   Size   Type
+;digit                                 IX-4      2   variable
+;result                                IX-2      2   variable
+;str                                   IX+6      3   parameter
+
+
+; Stack Frame Size: 13 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "strtou16",457,"_strtou16"
+;  458	
+;  459	uint8_t strtou8(const char *str) {
+_strtou8:
+.DEFINE "_strtou8"
+
+.VALUE _strtou8
+
+.CLASS 2
+
+.TYPE 76
+
+.ENDEF
+
+.BEGFUNC "strtou8",459,"_strtou8"
+
+.LINE 459
+
+.DEFINE "str"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 194
+
+.ENDEF
+
+.DEFINE "result"
+
+.CLASS 65
+
+.VALUE -1
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "digit"
+
+.CLASS 65
+
+.VALUE -2
+
+.TYPE 12
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	DEC	SP
+	DEC	SP
+;  460	    uint8_t result = 0;
+.LINE 460
+
+	LD	(IX+%FFFFFFFF),%0
+;  461	    const uint8_t maxDiv10 = 255 / 10;
+;  462	    const uint8_t maxMod10 = 255 % 10;
+;  463	
+;  464	    while (*str == ' ' || *str == '\t' || *str == '\n') {
+.LINE 464
+
+	JR	L_146
+L_147:
+;  465	        str++;
+.LINE 465
+
+	LD	BC,(IX+%6)
+	INC	BC
+	LD	(IX+%6),BC
+;  466	    }
+L_146:
+.LINE 466
+
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,32
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_147
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,9
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_147
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,10
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_147
+;  467	
+;  468	    while (*str >= '0' && *str <= '9') {
+.LINE 468
+
+	JR	L_154
+L_155:
+;  469	        uint8_t digit = *str - '0';
+.LINE 469
+
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	SUB	A,%30
+	LD	(IX+%FFFFFFFE),A
+;  470	        if (result > maxDiv10 || (result == maxDiv10 && digit > maxMod10)) {
+.LINE 470
+
+	LD	A,%19
+	CP	A,(IX+%FFFFFFFF)
+	JR	C,L_151
+	LD	A,(IX+%FFFFFFFF)
+	CP	A,%19
+	JR	NZ,L_152
+	LD	A,%5
+	CP	A,(IX+%FFFFFFFE)
+	JR	NC,L_152
+L_151:
+;  471	            return 255;
+.LINE 471
+
+	LD	A,%FF
+	JR	L_158
+;  472	        }
+L_152:
+.LINE 472
+
+;  473	        result = result * 10 + digit;
+.LINE 473
+
+	LD	B,%A
+	LD	C,(IX+%FFFFFFFF)
+	MLT	BC
+	LD	A,C
+	ADD	A,(IX+%FFFFFFFE)
+	LD	(IX+%FFFFFFFF),A
+;  474	        str++;
+.LINE 474
+
+	LD	BC,(IX+%6)
+	INC	BC
+	LD	(IX+%6),BC
+;  475	    }
+L_154:
+.LINE 475
+
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,48
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L__106
+	JP	PE,L_157
+	JR	L__107
+L__106:
+	JP	PO,L_157
+L__107:
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,HL
+	LD	HL,57
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L__108
+	JP	PE,L_155
+	JR	L__109
+L__108:
+	JP	PO,L_155
+L__109:
+L_157:
+;  476	
+;  477	    return result;
+.LINE 477
+
+	LD	A,(IX+%FFFFFFFF)
+;  478	}
+L_158:
+.LINE 478
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _strtou8 ***************************
+;Name                         Addr/Register   Size   Type
+;digit                                 IX-2      1   variable
+;result                                IX-1      1   variable
+;str                                   IX+6      3   parameter
+
+
+; Stack Frame Size: 11 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "strtou8",478,"_strtou8"
+;  479	
+;  480	uint24_t strtou24(const char *str) {
+_strtou24:
+.DEFINE "_strtou24"
+
+.VALUE _strtou24
+
+.CLASS 2
+
+.TYPE 78
+
+.ENDEF
+
+.BEGFUNC "strtou24",480,"_strtou24"
+
+.LINE 480
+
+.DEFINE "str"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 194
+
+.ENDEF
+
+.DEFINE "result"
+
+.CLASS 65
+
+.VALUE -4
+
+.TYPE 15
+
+.ENDEF
+
+.DEFINE "digit"
+
+.CLASS 65
+
+.VALUE -8
+
+.TYPE 15
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	PUSH	BC
+	PUSH	BC
+	DEC	SP
+	DEC	SP
+;  481	    uint32_t result = 0;
+.LINE 481
+
+	LD	BC,0
+	XOR	A,A
+	LD	(IX+%FFFFFFFC),BC
+	LD	(IX+%FFFFFFFF),A
+;  482	    const uint32_t maxDiv10 = 1677721;
+;  483	    const uint32_t maxMod10 = 5;
+;  484	
+;  485	    while (*str == ' ' || *str == '\t' || *str == '\n') {
+.LINE 485
+
+	JR	L_162
+L_163:
+;  486	        str++;
+.LINE 486
+
+	LD	BC,(IX+%6)
+	INC	BC
+	LD	(IX+%6),BC
+;  487	    }
+L_162:
+.LINE 487
+
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,32
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_163
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,9
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_163
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,10
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_163
+;  488		
+;  489	    while (*str >= '0' && *str <= '9') {
+.LINE 489
+
+	JR	L_170
+L_171:
+;  490	        uint32_t digit = *str - '0';
+.LINE 490
+
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	E,H
+	LD	BC,48
+	XOR	A,A
+	CALL	__lsub
+	LD	(IX+%FFFFFFF8),HL
+	LD	(IX+%FFFFFFFB),E
+;  491	        if (result > maxDiv10 || (result == maxDiv10 && digit > maxMod10)) {
+.LINE 491
+
+	LD	HL,1677721
+	LD	E,%0
+	LD	BC,(IX+%FFFFFFFC)
+	LD	A,(IX+%FFFFFFFF)
+	CALL	__lcmpu
+	JR	C,L_167
+	LD	HL,(IX+%FFFFFFFC)
+	LD	E,(IX+%FFFFFFFF)
+	LD	BC,1677721
+	XOR	A,A
+	CALL	__lcmpu
+	JR	NZ,L_168
+	LD	HL,5
+	LD	E,%0
+	LD	BC,(IX+%FFFFFFF8)
+	LD	A,(IX+%FFFFFFFB)
+	CALL	__lcmpu
+	JR	NC,L_168
+L_167:
+;  492	            return 16777215;
+.LINE 492
+
+	LD	HL,16777215
+	JR	L_174
+;  493	        }
+L_168:
+.LINE 493
+
+;  494	        result = result * 10 + digit;
+.LINE 494
+
+	LD	HL,(IX+%FFFFFFFC)
+	LD	E,(IX+%FFFFFFFF)
+	LD	BC,10
+	XOR	A,A
+	CALL	__lmulu
+	LD	BC,(IX+%FFFFFFF8)
+	LD	A,(IX+%FFFFFFFB)
+	CALL	__ladd
+	LD	(IX+%FFFFFFFC),HL
+	LD	(IX+%FFFFFFFF),E
+;  495	        str++;
+.LINE 495
+
+	LD	BC,(IX+%6)
+	INC	BC
+	LD	(IX+%6),BC
+;  496	    }
+L_170:
+.LINE 496
+
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,48
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L__119
+	JP	PE,L_173
+	JR	L__120
+L__119:
+	JP	PO,L_173
+L__120:
+	LD	HL,(IX+%6)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,HL
+	LD	HL,57
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L__121
+	JP	PE,L_171
+	JR	L__122
+L__121:
+	JP	PO,L_171
+L__122:
+L_173:
+;  497	
+;  498	    return result;
+.LINE 498
+
+	LD	HL,(IX+%FFFFFFFC)
+;  499	}
+L_174:
+.LINE 499
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _strtou24 ***************************
+;Name                         Addr/Register   Size   Type
+;digit                                 IX-8      4   variable
+;result                                IX-4      4   variable
+;str                                   IX+6      3   parameter
+
+
+; Stack Frame Size: 17 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "strtou24",499,"_strtou24"
+;  500	
+;  501	int main(int argc, char * argv[]) {
+_main:
+.DEFINE "_main"
+
+.VALUE _main
+
+.CLASS 2
+
+.TYPE 68
+
+.ENDEF
+
+.BEGFUNC "main",501,"_main"
+
+.LINE 501
+
+.DEFINE "argc"
+
+.CLASS 65
+
+.VALUE 6
+
+.TYPE 4
+
+.ENDEF
+
+.DEFINE "argv"
+
+.CLASS 65
+
+.VALUE 9
+
+.TYPE 290
+
+.ENDEF
+
+.DEFINE "bitmap_slot"
+
+.CLASS 65
+
+.VALUE -1
+
+.TYPE 12
+
+.ENDEF
+
+.DEFINE "x"
+
+.CLASS 65
+
+.VALUE -7
+
+.TYPE 14
+
+.ENDEF
+
+.DEFINE "bmp"
+
+.CLASS 65
+
+.VALUE -12
+
+.TAG "NONAME6"
+
+.TYPE 8
+
+.ENDEF
+
+.DEFINE "y"
+
+.CLASS 65
+
+.VALUE -18
+
+.TYPE 14
+
+.ENDEF
+
+	PUSH	IX
+	LD	IX,0
+	ADD	IX,SP
+	LEA	HL,IX+%FFFFFFDE
+	LD	SP,HL
+;  502	
+;  503	    uint24_t x, y;
+;  504		uint8_t bitmap_slot = 0;
+.LINE 504
+
+	LD	(IX+%FFFFFFFF),%0
+;  505		bmp_info bmp;
+;  506		
+;  507		//Args = 0:binary name, 1:filname, 2:slot, 3:topleft, 3:topright
+;  508		
+;  509		if ((argc < 2) || (argc == 4) || (argc > 5)) {
+.LINE 509
+
+	LD	BC,2
+	LD	HL,(IX+%6)
+	OR	A,A
+	SBC	HL,BC
+	JP	M,L__137
+	JP	PE,L_177
+	JR	L__138
+L__137:
+	JP	PO,L_177
+L__138:
+	LD	BC,4
+	LD	HL,(IX+%6)
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_177
+	LD	BC,(IX+%6)
+	LD	HL,5
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L__139
+	JP	PE,L_179
+	JR	L__140
+L__139:
+	JP	PO,L_179
+L__140:
+L_177:
+;  510	        printf("Usage is %s <filename> [bitmap slot] [top-left x] [top-left y]\r\n", argv[0]);
+.LINE 510
+
+	LD	BC,___print_uputch
+	LD	(___print_xputch),BC
+	LD	BC,L__127
+	PUSH	BC
+	CALL	___print_sendstring
+	POP	BC
+	LD	HL,(IX+%9)
+	LD	BC,(HL)
+	PUSH	BC
+	CALL	___print_sendstring
+	POP	BC
+	LD	BC,L__128
+	PUSH	BC
+	CALL	___print_sendstring
+	POP	BC
+;  511	        return 0;
+.LINE 511
+
+	OR	A,A
+	SBC	HL,HL
+	JR	L_195
+;  512	    }
+L_179:
+.LINE 512
+
+;  513		
+;  514		if (argc > 2) bitmap_slot = strtou8(argv[2]);
+.LINE 514
+
+	LD	BC,(IX+%6)
+	LD	HL,2
+	OR	A,A
+	SBC	HL,BC
+	JP	P,L__141
+	JP	PE,L_193
+	JR	L__142
+L__141:
+	JP	PO,L_193
+L__142:
+	LD	IY,(IX+%9)
+	LEA	HL,IY+%6
+	LD	BC,(HL)
+	PUSH	BC
+	CALL	_strtou8
+	POP	BC
+	LD	(IX+%FFFFFFFF),A
+L_193:
+;  515		
+;  516	    //vdp_mode(8);
+;  517		
+;  518		if (argc == 2) {
+.LINE 518
+
+	LD	BC,2
+	LD	HL,(IX+%6)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_192
+;  519	
+;  520			bmp = load_bmp_big(argv[1], 0);
+.LINE 520
+
+	LD	BC,0
+	PUSH	BC
+	LD	IY,(IX+%9)
+	LEA	HL,IY+%3
+	LD	BC,(HL)
+	PUSH	BC
+	PEA	IX+%FFFFFFE9
+	CALL	_load_bmp_big
+	POP	BC
+	POP	BC
+	POP	BC
+	LEA	DE,IX+%FFFFFFF4
+	LD	BC,5
+	LDIR	
+;  521			
+;  522		} else if (argc == 3) {
+.LINE 522
+
+	JR	L_194
+L_192:
+	LD	BC,3
+	LD	HL,(IX+%6)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_190
+;  523			
+;  524			bmp = load_bmp_big(argv[1], bitmap_slot);
+.LINE 524
+
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	LD	IY,(IX+%9)
+	LEA	HL,IY+%3
+	LD	BC,(HL)
+	PUSH	BC
+	PEA	IX+%FFFFFFE4
+	CALL	_load_bmp_big
+	POP	BC
+	POP	BC
+	POP	BC
+	LEA	DE,IX+%FFFFFFF4
+	LD	BC,5
+	LDIR	
+;  525			
+;  526		} else if (argc == 5) {
+.LINE 526
+
+	JR	L_194
+L_190:
+	LD	BC,5
+	LD	HL,(IX+%6)
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_194
+;  527		
+;  528			bmp = load_bmp_big(argv[1], bitmap_slot);
+.LINE 528
+
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	LD	IY,(IX+%9)
+	LEA	HL,IY+%3
+	LD	BC,(HL)
+	PUSH	BC
+	PEA	IX+%FFFFFFDF
+	CALL	_load_bmp_big
+	POP	BC
+	POP	BC
+	POP	BC
+	LEA	DE,IX+%FFFFFFF4
+	LD	BC,5
+	LDIR	
+;  529			
+;  530			if (argv[3][0] == 'C' || argv[3][0] == 'c') x = (getsysvar_scrwidth() - bmp.bmp_width) / 2;
+.LINE 530
+
+	LD	IY,(IX+%9)
+	LEA	IY,IY+%9
+	LD	(IX+%FFFFFFF1),IY
+	LD	HL,(IX+%FFFFFFF1)
+	LD	HL,(HL)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,67
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_181
+	LD	HL,(IX+%FFFFFFF1)
+	LD	HL,(HL)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,99
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_182
+L_181:
+	LD	(IX+%FFFFFFDE),A
+	CALL	_getsysvar_scrwidth
+	LD	A,(IX+%FFFFFFDE)
+	LD	BC,HL
+	CALL	__stoiu
+	LD	DE,HL
+	LD	BC,(IX+%FFFFFFF4)
+	CALL	__stoiu
+	LD	BC,HL
+	LD	HL,DE
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,2
+	CALL	__idivs
+	LD	(IX+%FFFFFFF9),HL
+;  531			else x = strtou16(argv[4]);
+.LINE 531
+
+	JR	L_186
+L_182:
+	LD	IY,(IX+%9)
+	LEA	HL,IY+%C
+	LD	BC,(HL)
+	PUSH	BC
+	CALL	_strtou16
+	POP	BC
+	LD	BC,HL
+	CALL	__stoiu
+	LD	(IX+%FFFFFFF9),HL
+L_186:
+;  532			
+;  533			if (argv[4][0] == 'C' || argv[4][0] == 'c') y = (getsysvar_scrheight() - bmp.bmp_height) / 2;
+.LINE 533
+
+	LD	IY,(IX+%9)
+	LEA	IY,IY+%C
+	LD	(IX+%FFFFFFFC),IY
+	LD	HL,(IX+%FFFFFFFC)
+	LD	HL,(HL)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,67
+	OR	A,A
+	SBC	HL,BC
+	JR	Z,L_184
+	LD	HL,(IX+%FFFFFFFC)
+	LD	HL,(HL)
+	LD	A,(HL)
+	LD	B,A
+	SEXT	HL
+	LD	L,B
+	LD	BC,99
+	OR	A,A
+	SBC	HL,BC
+	JR	NZ,L_185
+L_184:
+	LD	(IX+%FFFFFFDE),A
+	CALL	_getsysvar_scrheight
+	LD	A,(IX+%FFFFFFDE)
+	LD	BC,HL
+	CALL	__stoiu
+	LD	DE,HL
+	LD	BC,(IX+%FFFFFFF6)
+	CALL	__stoiu
+	LD	BC,HL
+	LD	HL,DE
+	OR	A,A
+	SBC	HL,BC
+	LD	BC,2
+	CALL	__idivs
+	LD	(IX+%FFFFFFEE),HL
+;  534			else y = strtou16(argv[4]);
+.LINE 534
+
+	JR	L_187
+L_185:
+	LD	HL,(IX+%FFFFFFFC)
+	LD	BC,(HL)
+	PUSH	BC
+	CALL	_strtou16
+	POP	BC
+	LD	BC,HL
+	CALL	__stoiu
+	LD	(IX+%FFFFFFEE),HL
+L_187:
+;  535			
+;  536			vdp_extended_select(bitmap_slot);
+.LINE 536
+
+	LD	C,(IX+%FFFFFFFF)
+	LD	B,%0
+	PUSH	BC
+	CALL	_vdp_extended_select
+	POP	BC
+;  537			vdp_bitmapDrawSelected(x,y);
+.LINE 537
+
+	LD	BC,(IX+%FFFFFFEE)
+	PUSH	BC
+	LD	BC,(IX+%FFFFFFF9)
+	PUSH	BC
+	CALL	_vdp_bitmapDrawSelected
+	POP	BC
+	POP	BC
+;  538			
+;  539		}
+L_194:
+.LINE 539
+
+;  540	
+;  541	    return 0;
+.LINE 541
+
+	OR	A,A
+	SBC	HL,HL
+L_195:
+.LINE 542
+
+	LD	SP,IX
+	POP	IX
+	RET	
+
+
+;**************************** _main ***************************
+;Name                         Addr/Register   Size   Type
+;_vdp_bitmapDrawSelected             IMPORT  -----   function
+;_getsysvar_scrheight                IMPORT  -----   function
+;_getsysvar_scrwidth                 IMPORT  -----   function
+;___print_sendstring                 IMPORT  -----   function
+;___print_xputch                     IMPORT      3   variable
+;___print_uputch                     IMPORT  -----   function
+;y                                    IX-18      3   variable
+;G_1                                  IX-15      3   variable
+;bmp                                  IX-12      5   variable
+;x                                     IX-7      3   variable
+;G_2                                   IX-4      3   variable
+;bitmap_slot                           IX-1      1   variable
+;argv                                  IX+9      3   parameter
+;argc                                  IX+6      3   parameter
+
+
+; Stack Frame Size: 46 (bytes)
+;       Spill Code: -3 (instruction)
+
+
+.ENDFUNC "main",542,"_main"
+	SEGMENT STRSECT
+L__127:
+	DB	"Usage is "
+	DB	0
+L__128:
+	DB	" <filename> [bitmap slot] [top-left x] [top-left y]"
+	DB	13,10,0
+	XREF _write16bit:ROM
+	XREF _vdp_bitmapDrawSelected:ROM
+	XREF _mos_getfil:ROM
+	XREF _mos_flseek:ROM
+	XREF _mos_fread:ROM
+	XREF _mos_fgetc:ROM
+	XREF _mos_fclose:ROM
+	XREF _mos_fopen:ROM
+	XREF _getsysvar_scrheight:ROM
+	XREF _getsysvar_scrwidth:ROM
+	XREF _mos_puts:ROM
+	XREF _waitvblank:ROM
+	XREF _putch:ROM
+	XREF _memcmp:ROM
+	XREF _memcpy:ROM
+	XREF _malloc:ROM
+	XREF _free:ROM
+	XREF ___print_sendstring:ROM
+	XREF ___print_xputch:ROM
+	XREF ___print_uputch:ROM
+	XREF __lcmps:ROM
+	XREF __lcmpu:ROM
+	XREF __ladd:ROM
+	XREF __lsub:ROM
+	XREF __idivs:ROM
+	XREF __ldivs:ROM
+	XREF __imuls:ROM
+	XREF __lmuls:ROM
+	XREF __lmulu:ROM
+	XREF __smulu:ROM
+	XREF __bshl:ROM
+	XREF __irems:ROM
+	XREF __lrems:ROM
+	XREF __stoiu:ROM
+	XREF __itol:ROM
+	XREF __ildix:ROM
+	XREF __istix:ROM
+	XREF __ladd_b:ROM
+	XREF __ishrs_b:ROM
+	XDEF _main
+	XDEF _strtou24
+	XDEF _strtou8
+	XDEF _strtou16
+	XDEF _load_bmp_big
+	XDEF _bgra8888_to_rgba2222
+	XDEF _bgr888_to_rgba2222
+	XDEF _reorder_and_insert
+	XDEF _reorder
+	XDEF _assign_buffer_to_bitmap
+	XDEF _vdp_extended_select
+	XDEF _add_stream_to_buffer
+	XDEF _clear_buffer
+	XDEF _rgba8888_to_rgba2222
+	XDEF _twiddle_buffer
+	XDEF _flip
+	XDEF _max
+	XDEF _min
+	XDEF _delay_secs
+	END
