@@ -158,6 +158,15 @@ void clear_buffer(uint16_t buffer_id) {
 	
 }
 
+void select_buffer (uint24_t buffer_id) {
+	
+	putch(23);
+	putch(27);
+	putch(0x20);
+	write16bit(buffer_id);
+	
+}
+
 void add_stream_to_buffer(uint16_t buffer_id, char* buffer_content, uint16_t buffer_size) {	
 
 	putch(23);
@@ -182,6 +191,8 @@ void vdp_extended_select(uint16_t buffer_id) {
 
 void assign_buffer_to_bitmap(uint16_t buffer_id, uint8_t bitmap_format, uint16_t width, uint16_t height) {
 
+	vdp_extended_select(buffer_id);
+	
 	//Consolidate buffer: (if needed) VDU 23, 0, &A0, bufferId; &0C
 	
 	putch(23);
@@ -195,10 +206,10 @@ void assign_buffer_to_bitmap(uint16_t buffer_id, uint8_t bitmap_format, uint16_t
 	putch(23);
 	putch(27);
 	putch(0x21);
-	write16bit(buffer_id);
-	putch(bitmap_format);
+	//write16bit(buffer_id);
 	write16bit(width);
 	write16bit(height);
+	putch(bitmap_format);
 	
 }
 
@@ -298,25 +309,6 @@ void generic8888_to_rgba2222(char *input, char *output, size_t num_pixels, uint8
     }
 }
 
-void rgbx5551_to_rgba2222(const uint16_t* src, uint8_t* dest, int width) {
-    
-	int16_t i;
-	uint8_t r,g,b;
-	uint16_t pixel;
-	for (i = 0; i < width; i++) {
-       
-        pixel = src[i];
-        r = ((pixel >> 10) & 0x1F) << 3;
-        g = ((pixel >> 5) & 0x1F) << 3;
-        b = (pixel & 0x1F) << 3;
-
-        dest[i] = ((r >> 6) & 0x03) | 
-              (((g >> 6) & 0x03) << 2) | 
-              (((b >> 6) & 0x03) << 4) | 
-              0xC0;
-    }
-}
-
 int8_t getByte(uint32_t bitmask) {
 
     if (bitmask & 0xFF) {
@@ -333,16 +325,6 @@ int8_t getByte(uint32_t bitmask) {
     }
 
     return -1;
-}
-
-// Function to count trailing zeros in a bitmask
-int count_trailing_zeros(unsigned int bitmask) {
-    int count = 0;
-    while ((bitmask & 1) == 0 && count < 32) {
-        bitmask >>= 1;
-        count++;
-    }
-    return count;
 }
 
 void print_bin(void* value, size_t size) {
