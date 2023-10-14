@@ -26,16 +26,16 @@ ZTPDIR = C:\ZiLOG\ZDSII_eZ80Acclaim!_5.3.5\ZTP2.5.1
 ZTPDIR_ESCSPACE = C:\ZiLOG\ZDSII_eZ80Acclaim!_5.3.5\ZTP2.5.1
 
 # project directory
-PRJDIR = D:\agon_bmp\agon_bmp_buffer
-PRJDIR_ESCSPACE = D:\agon_bmp\agon_bmp_buffer
+PRJDIR = D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer
+PRJDIR_ESCSPACE = D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer
 
 # intermediate files directory
-WORKDIR = D:\agon_bmp\agon_bmp_buffer\Debug
-WORKDIR_ESCSPACE = D:\agon_bmp\agon_bmp_buffer\Debug
+WORKDIR = D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\Debug
+WORKDIR_ESCSPACE = D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\Debug
 
 # output files directory
-OUTDIR = D:\agon_bmp\agon_bmp_buffer\Debug\
-OUTDIR_ESCSPACE = D:\agon_bmp\agon_bmp_buffer\Debug\
+OUTDIR = D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\Debug\
+OUTDIR_ESCSPACE = D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\Debug\
 
 # tools
 CC = @"$(BIN)\eZ80cc"
@@ -114,14 +114,14 @@ clean:
             $(RM) "$(WORKDIR)\vdp.src"
 
 relist: 
-	$(AS) $(ASFLAGS) -relist:"D:\agon_bmp\agon_bmp_buffer\Debug\template.map" \
-            D:\agon_bmp\agon_bmp_buffer\init.asm
-	$(AS) $(ASFLAGS) -relist:"D:\agon_bmp\agon_bmp_buffer\Debug\template.map" \
-            D:\agon_bmp\agon_bmp_buffer\Debug\main.src
-	$(AS) $(ASFLAGS) -relist:"D:\agon_bmp\agon_bmp_buffer\Debug\template.map" \
-            D:\agon_bmp\agon_bmp_buffer\mos-interface.asm
-	$(AS) $(ASFLAGS) -relist:"D:\agon_bmp\agon_bmp_buffer\Debug\template.map" \
-            D:\agon_bmp\agon_bmp_buffer\Debug\vdp.src
+	$(AS) $(ASFLAGS) -relist:"D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\Debug\template.map" \
+            D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\init.asm
+	$(AS) $(ASFLAGS) -relist:"D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\Debug\template.map" \
+            D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\Debug\main.src
+	$(AS) $(ASFLAGS) -relist:"D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\Debug\template.map" \
+            D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\mos-interface.asm
+	$(AS) $(ASFLAGS) -relist:"D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\Debug\template.map" \
+            D:\agon_bmp\agon_bmp_buffer\agon_bmp_buffer\Debug\vdp.src
 
 # pre-4.11.0 compatibility
 rebuildall: buildall 
