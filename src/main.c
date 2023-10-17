@@ -1,14 +1,24 @@
-//Copyright HeathenUK 2023, others' copyrights (Envenomator, Dean Belfield, etc.) unaffected.
-
+/*
+ * Title:			Hello World - C example
+ * Author:			Dean Belfield
+ * Created:			22/06/2022
+ * Last Updated:	22/11/2022
+ *
+ * Modinfo:
+ */
+ 
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdint.h>
 #include <string.h>
-#include <eZ80.h>
-#include <defines.h>
-#include "mos-interface.h"
-#include "vdp.h"
+#include <agon/vdp_vdu.h>
+#include <agon/vdp_key.h>
+
+// Parameters:
+// - argc: Argument count
+// - argv: Pointer to the argument string - zero terminated, parameters separated by spaces
+//
 
 typedef struct {
 	
@@ -40,99 +50,11 @@ typedef struct {
 	
 } bmp_info;
 
-extern void write16bit(uint16_t w);
-extern void write24bit(uint24_t w);
-extern void write32bit(uint32_t w);
-
-void delay_secs(UINT16 ticks_end) { //1 sec ticks
-	
-	UINT32 ticks = 0;
-	ticks_end *= 60;
-	while(true) {
-		
-		waitvblank();
-		ticks++;
-		if(ticks >= ticks_end) break;
-		
-	}
-	
+void write16bit(uint16_t w)
+{
+	putch(w & 0xFF); // write LSB
+	putch(w >> 8);	 // write MSB	
 }
-
-int min(int a, int b) {
-    if (a > b)
-        return b;
-    return a;
-}
-
-int max(int a, int b) {
-    if (a > b)
-        return a;
-    return b;
-}
-
-void flip(uint32_t * framebuffer, int width, int height) {
-    uint16_t y;
-    uint32_t * row_buffer = (uint32_t * ) malloc(sizeof(uint32_t) * width);
-    int row_size = width * sizeof(uint32_t);
-
-    for (y = 0; y < height / 2; y++) {
-        uint32_t * top_row = framebuffer + y * width;
-        uint32_t * bottom_row = framebuffer + (height - y - 1) * width;
-
-        memcpy(row_buffer, top_row, row_size);
-        memcpy(top_row, bottom_row, row_size);
-        memcpy(bottom_row, row_buffer, row_size);
-    }
-
-    free(row_buffer);
-}
-
-void twiddle_buffer(char* buffer, int width, int height) {
-    int row, col;
-    char* rowPtr;
-	char* oppositeRowPtr;
-	char* tempRow = (char*)malloc(width * 4);
-
-    //Iterate over each row
-    for (row = 0; row < height / 2; row++) {
-        rowPtr = buffer + row * width * 4;
-        oppositeRowPtr = buffer + (height - row - 1) * width * 4;
-
-        //Swap bytes within each row (BGRA to RGBA)
-        for (col = 0; col < width; col++) {
-            tempRow[col * 4] = oppositeRowPtr[col * 4 + 2]; // R
-            tempRow[col * 4 + 1] = oppositeRowPtr[col * 4 + 1]; // G
-            tempRow[col * 4 + 2] = oppositeRowPtr[col * 4]; // B
-            tempRow[col * 4 + 3] = oppositeRowPtr[col * 4 + 3]; // A
-
-            oppositeRowPtr[col * 4] = rowPtr[col * 4 + 2]; // R
-            oppositeRowPtr[col * 4 + 1] = rowPtr[col * 4 + 1]; // G
-            oppositeRowPtr[col * 4 + 2] = rowPtr[col * 4]; // B
-            oppositeRowPtr[col * 4 + 3] = rowPtr[col * 4 + 3]; // A
-
-            rowPtr[col * 4] = tempRow[col * 4]; // R
-            rowPtr[col * 4 + 1] = tempRow[col * 4 + 1]; // G
-            rowPtr[col * 4 + 2] = tempRow[col * 4 + 2]; // B
-            rowPtr[col * 4 + 3] = tempRow[col * 4 + 3]; // A
-        }
-    }
-	free(tempRow);
-}
-
-// void bgra8888_to_rgba2222(char *input, char *output, uint16_t num_pixels) {
-    // 
-	// char *input_ptr = input;
-    // char *output_ptr = output;
-
-    // while (num_pixels--) {
-
-        // *output_ptr = CONVR64[input[2] >> 6] + CONVG64[input[1] >> 6] + CONVB64[input[0] >> 6] + CONVA64[input[3] >> 6];
-
-        // input_ptr += 4;
-        // output_ptr++;
-		// 
-    // }
-// }
 
 void rgba8888_to_rgba2222(char *input, char *output, size_t num_pixels) {
     char *input_ptr = input;
@@ -189,6 +111,16 @@ void vdp_extended_select(uint16_t buffer_id) {
 
 }
 
+void vdp_draw(uint16_t x, uint16_t y) {	
+
+	putch(23);
+	putch(27);
+	putch(3);
+	write16bit(x);
+	write16bit(y);
+
+}
+
 void assign_buffer_to_bitmap(uint16_t buffer_id, uint8_t bitmap_format, uint16_t width, uint16_t height) {
 
 	vdp_extended_select(buffer_id);
@@ -210,36 +142,6 @@ void assign_buffer_to_bitmap(uint16_t buffer_id, uint8_t bitmap_format, uint16_t
 	write16bit(width);
 	write16bit(height);
 	putch(bitmap_format);
-	
-}
-
-void reorder(char *arr, uint16_t length) {
-    uint16_t i;
-	for (i = 0; i < length; i += 4) {
-        if (i + 2 < length) {
-            uint8_t temp = arr[i];
-            arr[i] = arr[i + 2];
-            arr[i + 2] = temp;
-        }
-    }
-}
-
-void reorder_and_insert(char *arr, uint16_t length, char **new_arr, uint16_t *new_length, char insert_value) {
-
-	uint16_t i, j = 0;
-    *new_length = (length / 3) * 4 + (length % 3);
-    *new_arr = (char *) malloc(*new_length * sizeof(char));
-
-    for (i = 0; i < length; i += 3) {
-        
-        (*new_arr)[j] = (i + 2 < length) ? arr[i + 2] : 0;
-        (*new_arr)[j + 1] = (i + 1 < length) ? arr[i + 1] : 0;
-        (*new_arr)[j + 2] = arr[i];
-        
-        (*new_arr)[j + 3] = 0xFF;
-
-        j += 4;
-    }
 	
 }
 
@@ -347,15 +249,15 @@ void print_bin(void* value, size_t size) {
 bmp_info get_info(const char * filename) {
 
 	uint8_t file;
-	FIL * fo;
+	//FIL * fo;
 	bmp_info bmp;
 	char initial_header[18];
 	char *main_header;
 	
 	memset(&bmp, 0, sizeof(bmp));	
 	
-	file = mos_fopen(filename, fa_read);
-	fo = (FIL * ) mos_getfil(file);
+	file = mos_fopen(filename, 0x01);
+	//fo = (FIL * ) mos_getfil(file);
 	
     if (!file) {
         printf("Error: could not open %s.\r\n", filename);
@@ -387,9 +289,9 @@ bmp_info get_info(const char * filename) {
 	bmp.row_padding = (4 - (bmp.bmp_width * (bmp.bmp_bitdepth / 8)) % 4) % 4;
 	bmp.non_pad_row = bmp.bmp_width * bmp.bmp_bitdepth / 8;
 	
-	printf("Debug: BMP is %u x %u x %u, compression type %u, and DIB size %u\r\n", bmp.bmp_width, bmp.bmp_height, bmp.bmp_bitdepth, bmp.compression, bmp.main_header_size);
+	printf("Debug: BMP is %u x %u x %u, compression type %lu, and DIB size %lu\r\n", bmp.bmp_width, bmp.bmp_height, bmp.bmp_bitdepth, bmp.compression, bmp.main_header_size);
 
-	if ((bmp.compression == 3) || (bmp.compression == 6) && bmp.main_header_size >= 108) {
+	if (((bmp.compression == 3) || (bmp.compression == 6)) && bmp.main_header_size >= 108) {
 		
 		if (bmp.bmp_bitdepth == 32) {
 							
@@ -445,7 +347,7 @@ bmp_info get_info(const char * filename) {
 
 }
 
-bmp_info load_bmp_clean(const char * filename, UINT8 slot) {
+bmp_info load_bmp_clean(const char * filename, uint8_t slot) {
 	
 	uint8_t file;
 	FIL * fo;
@@ -457,7 +359,7 @@ bmp_info load_bmp_clean(const char * filename, UINT8 slot) {
 	
 	memset(&bmp, 0, sizeof(bmp));	
 	
-	file = mos_fopen(filename, fa_read);
+	file = mos_fopen(filename, 0x01);
 	fo = (FIL * ) mos_getfil(file);
 	
     if (!file) {
@@ -496,7 +398,7 @@ bmp_info load_bmp_clean(const char * filename, UINT8 slot) {
 		return bmp;
 	}
 	
-	if ((bmp.compression == 3) || (bmp.compression == 6) && bmp.main_header_size >= 108) {
+	if (((bmp.compression == 3) || (bmp.compression == 6)) && bmp.main_header_size >= 108) {
 		
 		if (bmp.bmp_bitdepth == 16) {
 			
@@ -522,7 +424,6 @@ bmp_info load_bmp_clean(const char * filename, UINT8 slot) {
 
 			for (y = bmp.bmp_height - 1; y >= 0; y--) {
 
-				//printf("Row: %u\r\n",y);
 				mos_fread(file, src, bmp.non_pad_row);
 				generic8888_to_rgba2222(src, row_rgba2222,bmp.bmp_width,bmp.bmp_bitdepth / 8,bmp.red_pos,bmp.green_pos,bmp.blue_pos,bmp.alpha_pos);
 				add_stream_to_buffer(slot,row_rgba2222,bmp.bmp_width);
@@ -663,18 +564,25 @@ uint24_t strtou24(const char *str) {
     return result;
 }
 
-int main(int argc, char * argv[]) {
+static volatile SYSVAR *sv;
 
+int main(int argc, char * argv[])
+//int main(void)
+{
+	
     uint24_t x, y;
 	uint8_t bitmap_slot = 0;
 	bmp_info bmp;
 	
+	sv = vdp_vdu_init();
+	if ( vdp_key_init() == -1 ) return 1;
+
 	//Args = 0:binary name, 1:filname, 2:slot, 3:topleft, 3:topright
 	
 	if ((argc < 2) || (argc == 4) || (argc > 5)) {
-        // printf("Usage is %s <filename> [bitmap slot] [top-left x] [top-left y]\r\n", argv[0]);
-        // return 0;
-		bmp = load_bmp_clean(argv[1], 0);
+        printf("Usage is %s <filename> [bitmap slot] [top-left x or C] [top-left y or C]\r\n", argv[0]);
+        return 0;
+		//bmp = load_bmp_clean(argv[1], 0);
     }
 	
 	if (argc > 2) bitmap_slot = strtou8(argv[2]);
@@ -694,16 +602,17 @@ int main(int argc, char * argv[]) {
 	
 		bmp = load_bmp_clean(argv[1], bitmap_slot);
 		
-		if (argv[3][0] == 'C' || argv[3][0] == 'c') x = (getsysvar_scrwidth() - bmp.bmp_width) / 2;
+		if (argv[3][0] == 'C' || argv[3][0] == 'c') x = (sv->scrWidth - bmp.bmp_width) / 2;
 		else x = strtou16(argv[4]);
 		
-		if (argv[4][0] == 'C' || argv[4][0] == 'c') y = (getsysvar_scrheight() - bmp.bmp_height) / 2;
+		if (argv[4][0] == 'C' || argv[4][0] == 'c') y = (sv->scrHeight - bmp.bmp_height) / 2;
 		else y = strtou16(argv[4]);
 		
 		vdp_extended_select(bitmap_slot);
-		vdp_bitmapDrawSelected(x,y);
+		
+		vdp_draw(x,y);
 		
 	}
 
-    return 0;
+	return 0;
 }
