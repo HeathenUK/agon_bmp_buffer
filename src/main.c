@@ -121,6 +121,45 @@ void vdp_draw(uint16_t x, uint16_t y) {
 
 }
 
+void consolidate_buffer(uint16_t buffer_id) {
+
+	putch(23);
+	putch(0);
+	putch(0xA0);
+	write16bit(buffer_id);
+	putch(0x0E);	
+
+}
+
+void split_into_from(uint16_t buffer_id, uint16_t into, uint16_t from) {
+
+	//VDU 23, 0, &A0, bufferId; 17, blockSize; targetBufferId;
+
+	putch(23);
+	putch(0);
+	putch(0xA0);
+	write16bit(buffer_id);
+	putch(17);
+	write16bit(into);
+	write16bit(from);
+
+}	
+
+void split_into_cols_from(uint16_t buffer_id, uint16_t width, uint16_t cols, uint16_t from) {
+
+	//VDU 23, 0, &A0, bufferId; 20, width; blockCount; targetBufferId;
+
+	putch(23);
+	putch(0);
+	putch(0xA0);
+	write16bit(buffer_id);
+	putch(20);
+	write16bit(width);
+	write16bit(cols);
+	write16bit(from);
+
+}
+
 void assign_buffer_to_bitmap(uint16_t buffer_id, uint8_t bitmap_format, uint16_t width, uint16_t height) {
 
 	vdp_extended_select(buffer_id);
@@ -288,6 +327,84 @@ bmp_info get_info(const char * filename) {
 	
 	bmp.row_padding = (4 - (bmp.bmp_width * (bmp.bmp_bitdepth / 8)) % 4) % 4;
 	bmp.non_pad_row = bmp.bmp_width * bmp.bmp_bitdepth / 8;
+
+	if (((bmp.compression == 3) || (bmp.compression == 6)) && bmp.main_header_size >= 108) {
+		
+		if (bmp.bmp_bitdepth == 32) {
+							
+			bmp.redBitField = *(uint32_t *) & main_header[40];
+			bmp.red_pos = getByte(bmp.redBitField);
+			
+			bmp.greenBitField = *(uint32_t *) & main_header[44];
+			bmp.green_pos = getByte(bmp.greenBitField);
+			
+			bmp.blueBitField = *(uint32_t *) & main_header[48];
+			bmp.blue_pos = getByte(bmp.blueBitField);
+			
+			bmp.alphaBitField = *(uint32_t *) & main_header[52];			
+			bmp.alpha_pos = getByte(bmp.alphaBitField);
+					
+		} else if (bmp.bmp_bitdepth == 16) {
+			
+			bmp.redBitField = *(uint32_t *) & main_header[40];
+			
+			bmp.greenBitField = *(uint32_t *) & main_header[44];
+
+			bmp.blueBitField = *(uint32_t *) & main_header[48];
+
+			bmp.alphaBitField = *(uint32_t *) & main_header[52];			
+		
+		}	
+		
+	}
+	
+	mos_fclose(file);
+	return bmp;
+
+}
+
+bmp_info print_info(const char * filename) {
+
+	uint8_t file;
+	//FIL * fo;
+	bmp_info bmp;
+	char initial_header[18];
+	char *main_header;
+	
+	memset(&bmp, 0, sizeof(bmp));	
+	
+	file = mos_fopen(filename, 0x01);
+	//fo = (FIL * ) mos_getfil(file);
+	
+    if (!file) {
+        printf("Error: could not open %s.\r\n", filename);
+        return bmp;
+    }
+
+	mos_fread(file, initial_header, 14 + 4); //14 Bytes for core header, 4 bytes for full header size
+	
+	bmp.pixels_offset = * (uint32_t * ) & initial_header[10];
+    bmp.main_header_size = * (uint32_t * ) & initial_header[14];
+	
+	main_header = malloc(bmp.main_header_size);
+	
+	mos_flseek(file, 14);
+	mos_fread(file, main_header, bmp.main_header_size);
+	
+	bmp.bmp_width = *(int32_t *) & main_header[4];
+	bmp.bmp_height = *(int32_t *) & main_header[8];
+	bmp.bmp_bitdepth = *(uint16_t *) & main_header[14];	
+	bmp.compression = *(uint32_t *) & main_header[16];
+	bmp.color_table_size = * (uint32_t * ) & main_header[32];
+
+    if (bmp.color_table_size == 0 && bmp.bmp_bitdepth == 8) {
+        bmp.color_table_size = 256;
+    }
+
+	if (bmp.color_table_size > 0) mos_fread(file, bmp.color_table, bmp.color_table_size * 4);
+	
+	bmp.row_padding = (4 - (bmp.bmp_width * (bmp.bmp_bitdepth / 8)) % 4) % 4;
+	bmp.non_pad_row = bmp.bmp_width * bmp.bmp_bitdepth / 8;
 	
 	printf("Debug: BMP is %u x %u x %u, compression type %lu, and DIB size %lu\r\n", bmp.bmp_width, bmp.bmp_height, bmp.bmp_bitdepth, bmp.compression, bmp.main_header_size);
 
@@ -394,7 +511,7 @@ bmp_info load_bmp_clean(const char * filename, uint8_t slot) {
 	row_rgba2222 = (char * ) malloc(bmp.bmp_width);
 	
 	if ((bmp.compression != 0) && (bmp.compression != 3)) {
-		printf("Non standard BMP compression, exiting.\r\n");
+		printf("Non standard BMP compression %lu, exiting.\r\n", bmp.compression);
 		return bmp;
 	}
 	
@@ -493,7 +610,6 @@ bmp_info load_bmp_clean(const char * filename, uint8_t slot) {
 		}
 	}
 	
-	assign_buffer_to_bitmap(slot,1,bmp.bmp_width,bmp.bmp_height);
 	free(row_rgba2222);
 	
 	mos_fclose(file);
@@ -564,54 +680,204 @@ uint24_t strtou24(const char *str) {
     return result;
 }
 
+void to_lowercase(char *str) {
+    for (int i = 0; str[i]; i++) {
+        str[i] = tolower(str[i]);
+    }
+}
+
+typedef struct {
+    char *file;
+    uint16_t buffer;
+	uint16_t x;
+	uint16_t y;
+	uint16_t cols;
+	uint16_t rows;
+	bool show;
+	bool info;
+} cli;
+
+typedef struct {
+    char **keys;
+    uint8_t num_keys;
+    void *ptr;
+    char type;  // 'i' for int, 'b' for bool, 'f' for flag, 's' for string
+    bool is_set;  // To check if the parameter was set
+} arg_map;
+
+arg_map args[] = {
+    { .keys = (char *[]){ "-file", "-f" },		.num_keys = 2, .ptr = NULL, .type = 's', .is_set = false },
+    { .keys = (char *[]){ "-buffer", "-b" },	.num_keys = 2, .ptr = NULL, .type = 'i', .is_set = false },
+    { .keys = (char *[]){ "-x" },	.num_keys = 1, .ptr = NULL, .type = 'i', .is_set = false },
+	{ .keys = (char *[]){ "-y" },	.num_keys = 1, .ptr = NULL, .type = 'i', .is_set = false },
+	{ .keys = (char *[]){ "-cols", "-c" },	.num_keys = 2, .ptr = NULL, .type = 'i', .is_set = false },
+	{ .keys = (char *[]){ "-rows", "-r" },	.num_keys = 2, .ptr = NULL, .type = 'i', .is_set = false },
+	{ .keys = (char *[]){ "-show", "-s" },	.num_keys = 2, .ptr = NULL, .type = 'f', .is_set = false },
+	{ .keys = (char *[]){ "-info", "-i" },	.num_keys = 2, .ptr = NULL, .type = 'f', .is_set = false }
+};
+
+void parse_args(int argc, char *argv[], cli *cli) {
+    
+    args[0].ptr = &cli->file;
+	args[1].ptr = &cli->buffer;
+	args[2].ptr = &cli->x;
+    args[3].ptr = &cli->y;
+	args[4].ptr = &cli->cols;
+	args[5].ptr = &cli->rows;
+	args[6].ptr = &cli->show;
+	args[7].ptr = &cli->info;
+
+    for (int i = 1; i < argc; ++i) {
+        for (unsigned int j = 0; j < sizeof(args) / sizeof(arg_map); ++j) {
+            for (int k = 0; k < args[j].num_keys; ++k) {
+                if (strcmp(argv[i], args[j].keys[k]) == 0) {
+                    args[j].is_set = true;  // Mark as set
+					if (args[j].type == 'f') {
+						*(bool *)(args[j].ptr) = true;  // Set flag to true if present
+					} else if (i + 1 < argc) {
+						i++;
+						switch (args[j].type) {
+							case 'i':
+								*(uint16_t *)(args[j].ptr) = atoi(argv[i]);
+								break;
+							case 'b':
+								*(bool *)(args[j].ptr) = atoi(argv[i]);
+								break;
+							case 's':
+								*(char **)(args[j].ptr) = argv[i];
+								break;
+						}
+                    }
+                }
+            }
+        }
+    }
+}
+
 static volatile SYSVAR *sv;
 
 int main(int argc, char * argv[])
 //int main(void)
 {
 	
-    uint24_t x, y;
-	uint8_t bitmap_slot = 0;
 	bmp_info bmp;
+	bool arg_offset = 0;
 	
 	sv = vdp_vdu_init();
 	if ( vdp_key_init() == -1 ) return 1;
 
-	//Args = 0:binary name, 1:filname, 2:slot, 3:topleft, 3:topright
+	cli params = {};
+
+	parse_args(argc, argv, &params);
+
+	if (argc > 1 && !args[0].is_set) {
+		char ext[] = ".bmp";
+		char test[5];
+		
+		strncpy(test, argv[1] + (strlen(argv[1]) - 4), 4);
+		test[4] = '\0';
+		to_lowercase(test);
+		
+		if (strncmp(test, ext, 4) == 0) {
+			arg_offset = 1;
+			params.file = argv[1];
+			args[0].is_set = true;
+		}
+	}
+
+    // args[0].ptr = &cli->file;
+	// args[1].ptr = &cli->buffer;
+	// args[2].ptr = &cli->x;
+    // args[3].ptr = &cli->y;
+	// args[4].ptr = &cli->cols;
+	// args[5].ptr = &cli->rows;
+	// args[6].ptr = &cli->show;
+	// args[7].ptr = &cli->info;
+
+	if (argc < 2) { //No args
+
+		printf("Usage is bmpb <file.bmp>\r\n");
+		return 0;
+
+	}
+
+	if (argc == 2 && args[0].is_set) {
+
+		bmp = load_bmp_clean(params.file, 0);
+		assign_buffer_to_bitmap(0,1,bmp.bmp_width,bmp.bmp_height);
+		vdp_draw(((sv->scrWidth  -  bmp.bmp_width) / 2),((sv->scrHeight - bmp.bmp_height) / 2));
+		return 0;
+
+	}
+
+	// if (!args[0].is_set) {
+
+	// 	printf("No file specified.\r\n");
+
+	// 	return 0;
+
+	// }
+
+	if (args[7].is_set) {
+		print_info(params.file);
+		return 0;
+	}
+
+	if (args[4].is_set || args[5].is_set) { //If either cols or rows are set
+
+		if		(!args[4].is_set) params.cols = 1;
+		else if (!args[5].is_set) params.rows = 1;
+
+		uint16_t working_bufferid = params.buffer + (params.cols * params.rows) - 1;
+
+		//Load whole tilesheet into one bitmap stored after final tile range
+
+
+		bmp = load_bmp_clean(params.file, working_bufferid);
+
+		uint16_t tile_height = bmp.bmp_height / params.rows;
+		uint16_t tile_width = bmp.bmp_width / params.cols;
+		uint16_t tile_n = params.rows * params.cols;
+
+		consolidate_buffer(working_bufferid);
+
+		printf("C%u R%u TW%u TH%u Ts%u\r\n", params.cols, params.rows, tile_height, tile_width, tile_n);
+
+		//Split tilesheet into rows (each row containing col tiles) starting from working_bufferid - cols
+
+		//uint8_t row_base = working_bufferid - params.cols;
+		uint8_t row_base = working_bufferid - params.rows + 1;
+		
+		split_into_from(working_bufferid, (bmp.bmp_height * bmp.bmp_width) / params.rows, row_base);
+
+		for (uint8_t y = 0; y < params.rows; y++) {
+		
+			//For each row, split into columns, spreading out from original bufferid
+			split_into_cols_from(row_base + y, tile_width, params.cols, params.buffer + (y * params.cols));
+		
+		}
+
+		for (uint8_t i = 0; i < tile_n; i++) {
+
+			assign_buffer_to_bitmap(params.buffer + i,1,tile_width,tile_height);
+
+		}
+
+		return 0;
+
+	}
 	
-	if ((argc < 2) || (argc == 4) || (argc > 5)) {
-        printf("Usage is %s <filename> [bitmap slot] [top-left x or C] [top-left y or C]\r\n", argv[0]);
-        return 0;
-		//bmp = load_bmp_clean(argv[1], 0);
-    }
-	
-	if (argc > 2) bitmap_slot = strtou8(argv[2]);
-	
-    //vdp_mode(8);
-	
-	if (argc == 2) {
-		
-		bmp = load_bmp_clean(argv[1], 0);
-		
-	} else if (argc == 3) {
-		
-		if (strcmp(argv[2], "/i") == 0) get_info(argv[1]);
-		else bmp = load_bmp_clean(argv[1], bitmap_slot);
-		
-	} else if (argc == 5) {
-	
-		bmp = load_bmp_clean(argv[1], bitmap_slot);
-		
-		if (argv[3][0] == 'C' || argv[3][0] == 'c') x = (sv->scrWidth - bmp.bmp_width) / 2;
-		else x = strtou16(argv[4]);
-		
-		if (argv[4][0] == 'C' || argv[4][0] == 'c') y = (sv->scrHeight - bmp.bmp_height) / 2;
-		else y = strtou16(argv[4]);
-		
-		vdp_extended_select(bitmap_slot);
-		
-		vdp_draw(x,y);
-		
+	//Otherwise, proceed to read in and if necessary display
+
+	bmp = load_bmp_clean(params.file, params.buffer);
+	assign_buffer_to_bitmap(params.buffer,1,bmp.bmp_width,bmp.bmp_height);
+
+	if (args[6].is_set) { //Display the BMP
+
+		if (!args[2].is_set) params.x = ((sv->scrWidth  -  bmp.bmp_width) / 2); //No X set, so centre
+		if (!args[3].is_set) params.y = ((sv->scrHeight - bmp.bmp_height) / 2); //No Y set, so centre
+		vdp_draw(params.x,params.y);
+
 	}
 
 	return 0;
